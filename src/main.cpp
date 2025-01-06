@@ -443,7 +443,8 @@ int main()
 {
 	std::signal(SIGINT, signal_handler);
 
-	auto canDriver = std::make_shared<isobus::NTCANPlugin>(42);
+//	auto canDriver = std::make_shared<isobus::NTCANPlugin>(42);
+    auto canDriver = std::make_shared<isobus::PCANBasicWindowsPlugin>(static_cast<WORD>(PCAN_USBBUS2)); //1 is for VT :)
 	if (nullptr == canDriver)
 	{
 		std::cout << "Unable to find a CAN driver. Please make sure you have one of the above drivers installed with the library." << std::endl;
