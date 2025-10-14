@@ -92,7 +92,18 @@ bool Application::initialize()
 	static std::uint32_t lastXteTransmit = 0;
 
 	auto packetHandler = [this, serverCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
-		if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
+		if (src == 0x7F && pgn == 0xEF) // 239 - Machine Data
+		{
+			// Tramline data is at byte 8 (data[3] in our span)
+			// Bit 0 = left tramline, Bit 1 = right tramline
+			if (data.size() > 3)
+			{
+				bool leftTram = (data[3] & 0x01) != 0;
+				bool rightTram = (data[3] & 0x02) != 0;
+				tcServer->update_tramline_states(leftTram, rightTram);
+			}
+		}
+		else if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
 		{
 			// TODO: hack to get desired section states. probably want to make a new pgn later when we need more than 16 sections
 			std::vector<bool> sectionStates;
@@ -216,6 +227,19 @@ bool Application::update()
 				}
 				data.push_back(byte);
 			}
+
+			// Add tramline states: bit 0 = left tramline, bit 1 = right tramline
+			std::uint8_t tramlineState = 0;
+			if (state.get_left_tramline_state())
+			{
+				tramlineState |= 0x01;
+			}
+			if (state.get_right_tramline_state())
+			{
+				tramlineState |= 0x02;
+			}
+			data.push_back(tramlineState);
+
 			udpConnections->send(0x80, 0xF0, data);
 		}
 		lastHeartbeatTransmit = isobus::SystemTiming::get_timestamp_ms();

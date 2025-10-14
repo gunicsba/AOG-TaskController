@@ -135,6 +135,26 @@ void ClientState::set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, s
 	ddiToElementNumber[ddi] = elementNumber;
 }
 
+bool ClientState::get_left_tramline_state() const
+{
+	return leftTramlineState;
+}
+
+void ClientState::set_left_tramline_state(bool state)
+{
+	leftTramlineState = state;
+}
+
+bool ClientState::get_right_tramline_state() const
+{
+	return rightTramlineState;
+}
+
+void ClientState::set_right_tramline_state(bool state)
+{
+	rightTramlineState = state;
+}
+
 MyTCServer::MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internalControlFunction) :
   TaskControllerServer(internalControlFunction,
                        1, // AOG limits to 1 boom
@@ -503,6 +523,15 @@ void MyTCServer::update_section_control_enabled(bool enabled)
 			client.second.set_section_control_enabled(enabled);
 			send_section_control_state(client.first, enabled);
 		}
+	}
+}
+
+void MyTCServer::update_tramline_states(bool leftTram, bool rightTram)
+{
+	for (auto &client : clients)
+	{
+		client.second.set_left_tramline_state(leftTram);
+		client.second.set_right_tramline_state(rightTram);
 	}
 }
 

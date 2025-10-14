@@ -48,6 +48,10 @@ public:
 	void mark_measurement_commands_sent();
 	std::uint16_t get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
+	bool get_left_tramline_state() const;
+	void set_left_tramline_state(bool state);
+	bool get_right_tramline_state() const;
+	void set_right_tramline_state(bool state);
 
 private:
 	isobus::DeviceDescriptorObjectPool pool; ///< The device descriptor object pool (DDOP) for the TC
@@ -60,6 +64,8 @@ private:
 	bool setpointWorkState = false; ///< The overall work state desired
 	bool actualWorkState = false; ///< The overall work state actual
 	bool isSectionControlEnabled = false; ///< Stores auto vs manual mode setting
+	bool leftTramlineState = false; ///< Left tramline on/off state
+	bool rightTramlineState = false; ///< Right tramline on/off state
 };
 
 // Create the task controller server object, this will handle all the ISOBUS communication for us
@@ -87,6 +93,7 @@ public:
 	void request_measurement_commands();
 	void update_section_states(std::vector<bool> &sectionStates);
 	void update_section_control_enabled(bool enabled);
+	void update_tramline_states(bool leftTram, bool rightTram);
 
 private:
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);
