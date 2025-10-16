@@ -100,6 +100,15 @@ bool Application::initialize()
 			{
 				bool leftTram = (data[3] & 0x01) != 0;
 				bool rightTram = (data[3] & 0x02) != 0;
+				static bool prevLeftTram = false;
+				static bool prevRightTram = false;
+				if ((leftTram != prevLeftTram) || (rightTram != prevRightTram))
+				{
+					std::cout << "AOG tramline change detected: left=" << (leftTram ? "ON" : "OFF")
+					          << ", right=" << (rightTram ? "ON" : "OFF") << std::endl;
+					prevLeftTram = leftTram;
+					prevRightTram = rightTram;
+				}
 				tcServer->update_tramline_states(leftTram, rightTram);
 			}
 		}
