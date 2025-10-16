@@ -11,6 +11,7 @@
 
 #include "isobus/isobus/isobus_device_descriptor_object_pool_helpers.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
+#include "isobus/isobus/isobus_data_dictionary.hpp"
 
 #include <bitset>
 #include <fstream>
@@ -317,7 +318,14 @@ void MyTCServer::on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunc
                                              ProcessDataCommands processDataCommand)
 {
 	// This callback lets you know when a client sends a process data acknowledge (PDACK) message to you
-	std::cout << "Received process data acknowledge from client " << int(partner->get_address()) << " for DDI " << dataDescriptionIndex << " element " << elementNumber << " with error codes " << std::bitset<8>(errorCodesFromClient) << " and command " << static_cast<int>(processDataCommand) << std::endl;
+	const auto &pdackEntry = isobus::DataDictionary::get_entry(dataDescriptionIndex);
+	std::cout << "Received PDACK from client " << int(partner->get_address())
+	          << ": DDI 0x" << std::hex << dataDescriptionIndex << std::dec
+	          << " (" << pdackEntry.to_string() << ")"
+	          << ", element " << elementNumber
+	          << ", errorCodes=" << std::bitset<8>(errorCodesFromClient)
+	          << ", command=" << static_cast<int>(processDataCommand)
+	          << std::endl;
 }
 
 bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
@@ -326,6 +334,17 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
                                   std::int32_t processDataValue,
                                   std::uint8_t &errorCodes)
 {
+	// Human-readable DDI log for incoming value commands
+	{
+		const auto &entry = isobus::DataDictionary::get_entry(dataDescriptionIndex);
+		std::cout << "PD value from client " << int(partner->get_address())
+		          << ": DDI 0x" << std::hex << dataDescriptionIndex << std::dec
+		          << " (" << entry.to_string() << ")"
+		          << ", element " << elementNumber
+		          << ", value " << processDataValue
+		          << " (" << entry.format_value(processDataValue) << ")"
+		          << std::endl;
+	}
 	switch (dataDescriptionIndex)
 	{
 		case static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualCondensedWorkState1_16):
@@ -414,14 +433,26 @@ void MyTCServer::request_measurement_commands()
 									{
 										// TODO: This is a bit of a hack, but it works for now
 										client.second.set_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(processDataObject->get_ddi()), elementObject->get_element_number());
+										const auto &entry2 = isobus::DataDictionary::get_entry(processDataObject->get_ddi());
+										std::cout << "Mapped DDI 0x" << std::hex << processDataObject->get_ddi() << std::dec
+										          << " (" << entry2.to_string() << ") to element " << elementObject->get_element_number() << std::endl;
+										const auto &entry1 = isobus::DataDictionary::get_entry(processDataObject->get_ddi());
+										std::cout << "Mapped DDI 0x" << std::hex << processDataObject->get_ddi() << std::dec
+										          << " (" << entry1.to_string() << ") to element " << elementObject->get_element_number() << std::endl;
 
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
 										{
-											send_change_threshold_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1);
+												send_change_threshold_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1);
+												std::cout << "Subscribed (OnChange) to DDI 0x" << std::hex << processDataObject->get_ddi() << std::dec
+												          << " (" << entry2.to_string() << ") for element " << elementObject->get_element_number() << std::endl;
+												std::cout << "Subscribed (OnChange) to DDI 0x" << std::hex << processDataObject->get_ddi() << std::dec
+												          << " (" << entry1.to_string() << ") for element " << elementObject->get_element_number() << std::endl;
 										}
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::TimeInterval))
 										{
-											send_time_interval_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1000);
+												send_time_interval_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1000);
+												std::cout << "Subscribed (TimeInterval) to DDI 0x" << std::hex << processDataObject->get_ddi() << std::dec
+												          << " (" << entry1.to_string() << ") for element " << elementObject->get_element_number() << std::endl;
 										}
 									}
 								}
