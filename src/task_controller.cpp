@@ -7,15 +7,16 @@
  * @copyright 2025 Daan Steenbergen
  */
 #include "task_controller.hpp"
+
+#include <bitset>
+#include <fstream>
+#include <iostream>
+
 #include "settings.hpp"
 
 #include "isobus/isobus/isobus_data_dictionary.hpp"
 #include "isobus/isobus/isobus_device_descriptor_object_pool_helpers.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
-
-#include <bitset>
-#include <fstream>
-#include <iostream>
 
 void ClientState::set_number_of_sections(std::uint8_t number) {
 	numberOfSections = number;
@@ -315,7 +316,8 @@ bool MyTCServer::on_value_command(
 									 ActualTramlineCondensedWorkState241_256)) ||
 			dataDescriptionIndex ==
 					static_cast<std::uint16_t>(
-							isobus::DataDescriptionIndex::TramlineControlState)) {
+							isobus::DataDescriptionIndex::TramlineControlState))
+	{
 		const auto &entry = isobus::DataDictionary::get_entry(dataDescriptionIndex);
 		std::cout << "PD value (tramline) from client "
 							<< int(partner->get_address()) << ": DDI 0x" << std::hex
@@ -326,7 +328,8 @@ bool MyTCServer::on_value_command(
 							<< std::endl;
 	}
 
-	switch (dataDescriptionIndex) {
+	switch (dataDescriptionIndex)
+	{
 	case static_cast<std::uint16_t>(
 			isobus::DataDescriptionIndex::ActualCondensedWorkState1_16):
 	case static_cast<std::uint16_t>(
@@ -416,7 +419,8 @@ bool MyTCServer::on_value_command(
 		const bool oldRight = clients[partner].get_right_tramline_state();
 		clients[partner].set_left_tramline_state(newLeft);
 		clients[partner].set_right_tramline_state(newRight);
-		if ((newLeft != oldLeft) || (newRight != oldRight)) {
+		if ((newLeft != oldLeft) || (newRight != oldRight))
+		{
 			std::cout << "Implement tramline state changed: left="
 								<< (newLeft ? "ON" : "OFF")
 								<< ", right=" << (newRight ? "ON" : "OFF") << std::endl;
@@ -745,7 +749,8 @@ void MyTCServer::send_tramline_setpoint_states(
 			isobus::DataDescriptionIndex::SetpointTramlineCondensedWorkState1_16);
 	const auto elementNumber = clients[client].get_element_number_for_ddi(
 			isobus::DataDescriptionIndex::SetpointTramlineCondensedWorkState1_16);
-	if (elementNumber != 0) {
+	if (elementNumber != 0)
+	{
 		send_set_value(client, ddiTarget, elementNumber, value);
 		const auto &entry = isobus::DataDictionary::get_entry(ddiTarget);
 		std::cout << "Sent tramline setpoint: DDI 0x" << std::hex << ddiTarget
