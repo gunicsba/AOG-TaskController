@@ -98,6 +98,7 @@ public:
 private:
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);
 	void send_section_control_state(std::shared_ptr<isobus::ControlFunction> client, bool enabled);
+	void send_tramline_setpoint_states(std::shared_ptr<isobus::ControlFunction> client);
 
 	std::map<std::shared_ptr<isobus::ControlFunction>, ClientState> clients;
 	std::map<std::shared_ptr<isobus::ControlFunction>, std::queue<std::vector<std::uint8_t>>> uploadedPools;

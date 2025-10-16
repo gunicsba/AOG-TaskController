@@ -91,18 +91,27 @@ bool Application::initialize()
 	static std::uint8_t xteSid = 0;
 	static std::uint32_t lastXteTransmit = 0;
 
-	auto packetHandler = [this, serverCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
-		if (src == 0x7F && pgn == 0xEF) // 239 - Machine Data
-		{
-			// Tramline data is at byte 8 (data[3] in our span)
-			// Bit 0 = left tramline, Bit 1 = right tramline
-			if (data.size() > 3)
+		auto packetHandler = [this, serverCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
+			if (src == 0x7F && pgn == 0xEF) // 239 - Machine Data
 			{
-				bool leftTram = (data[3] & 0x01) != 0;
-				bool rightTram = (data[3] & 0x02) != 0;
-				tcServer->update_tramline_states(leftTram, rightTram);
+				// Tramline data is at byte 8 (data[3] in our span)
+				// Bit 0 = left tramline, Bit 1 = right tramline
+				if (data.size() > 3)
+				{
+					bool leftTram = (data[3] & 0x01) != 0;
+					bool rightTram = (data[3] & 0x02) != 0;
+					static bool prevLeftTram = false;
+					static bool prevRightTram = false;
+					if ((leftTram != prevLeftTram) || (rightTram != prevRightTram))
+					{
+						std::cout << "AOG tramline change detected: left=" << (leftTram ? "ON" : "OFF")
+						          << ", right=" << (rightTram ? "ON" : "OFF") << std::endl;
+						prevLeftTram = leftTram;
+						prevRightTram = rightTram;
+					}
+					tcServer->update_tramline_states(leftTram, rightTram);
+				}
 			}
-		}
 		else if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
 		{
 			// TODO: hack to get desired section states. probably want to make a new pgn later when we need more than 16 sections
