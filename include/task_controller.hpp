@@ -66,6 +66,10 @@ public:
 	void set_track_number(std::uint16_t track);
 	std::uint16_t get_track_number() const;
 
+	// Cache for DDI 515 last sent value
+	void set_last_tramline_control_state_sent(std::uint8_t state);
+	std::uint8_t get_last_tramline_control_state_sent() const;
+
 private:
 	isobus::DeviceDescriptorObjectPool pool; ///< The device descriptor object pool (DDOP) for the TC
 	bool areMeasurementCommandsSent = false; ///< Whether or not the measurement commands have been sent
@@ -82,6 +86,7 @@ private:
 	std::uint8_t tramlineControlLevelSupport = 0; ///< Bitmask: bit0=L1, bit1=L2, bit2=L3
 	std::uint8_t selectedTramlineControlLevel = 0xFF; ///< Last sent 506 value (0xFF = unknown)
 	std::uint16_t trackNumber = 0; ///< DDI 509 Actual Track Number (test)
+    std::uint8_t lastSentTramlineControlState = 0xFF; ///< Cache last DDI 515 value to avoid spamming
 };
 
 // Create the task controller server object, this will handle all the ISOBUS communication for us

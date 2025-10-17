@@ -205,6 +205,16 @@ std::uint16_t ClientState::get_track_number() const
     return trackNumber;
 }
 
+void ClientState::set_last_tramline_control_state_sent(std::uint8_t state)
+{
+    lastSentTramlineControlState = state;
+}
+
+std::uint8_t ClientState::get_last_tramline_control_state_sent() const
+{
+    return lastSentTramlineControlState;
+}
+
 MyTCServer::MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internalControlFunction) :
   TaskControllerServer(internalControlFunction,
                        1, // AOG limits to 1 boom
@@ -762,56 +772,59 @@ void MyTCServer::send_section_control_state(std::shared_ptr<isobus::ControlFunct
 
 void MyTCServer::send_tramline_setpoint_states(std::shared_ptr<isobus::ControlFunction> client)
 {
-    // Compose condensed tramline setpoint value using first two valves: 1=left, 2=right
-    std::uint32_t value = 0;
-    if (clients[client].get_left_tramline_state())
-	{
-		value |= (SectionState::ON << 0); // bits 1:0
-	}
-	if (clients[client].get_right_tramline_state())
-	{
-		value |= (SectionState::ON << 2); // bits 3:2
-	}
-
-    const auto ddiSetpointTram = isobus::DataDescriptionIndex::SetpointTramlineCondensedWorkState1_16;
-    std::uint16_t ddiTarget = static_cast<std::uint16_t>(ddiSetpointTram);
-    std::uint16_t elementNumber = 0;
-
-    if (clients[client].try_get_element_number_for_ddi(ddiSetpointTram, elementNumber))
+    // Decide based on negotiated tramline level: prefer 515 (Level 1/2), only use condensed (Level 3)
+    std::uint8_t selectedLevel = clients[client].get_selected_tramline_control_level();
+    bool useCondensed = (selectedLevel == 3);
+    if (useCondensed)
     {
-        send_set_value(client, ddiTarget, elementNumber, value);
-        const auto &entry = isobus::DataDictionary::get_entry(ddiTarget);
-        std::cout << "Sent tramline setpoint: DDI " << ddiTarget
-                  << " (" << entry.to_string() << ") to element " << elementNumber
-                  << ", left=" << (clients[client].get_left_tramline_state() ? "ON" : "OFF")
-                  << ", right=" << (clients[client].get_right_tramline_state() ? "ON" : "OFF")
-                  << ", value=0x" << std::hex << value << std::dec
-                  << std::endl;
-    }
-    else
-    {
-        // Fallback: some implements only support TramlineControlState (515). Use it if present.
-        static bool warnedMissingTramline = false;
-        std::uint16_t ctlElem = 0;
-        if (clients[client].try_get_element_number_for_ddi(isobus::DataDescriptionIndex::TramlineControlState, ctlElem))
+        // Compose condensed tramline setpoint value using first two valves: 1=left, 2=right
+        std::uint32_t value = 0;
+        if (clients[client].get_left_tramline_state())
         {
-            const std::uint32_t ctlValue = (clients[client].get_left_tramline_state() || clients[client].get_right_tramline_state()) ? 1u : 0u;
-            const std::uint16_t ctlDDI = static_cast<std::uint16_t>(isobus::DataDescriptionIndex::TramlineControlState);
-            send_set_value(client, ctlDDI, ctlElem, ctlValue);
-            if (!warnedMissingTramline)
-            {
-                std::cout << "Tramline condensed setpoint DDI not found; using Tramline Control State fallback." << std::endl;
-                warnedMissingTramline = true;
-            }
+            value |= (SectionState::ON << 0); // bits 1:0
+        }
+        if (clients[client].get_right_tramline_state())
+        {
+            value |= (SectionState::ON << 2); // bits 3:2
+        }
+
+        const auto ddiSetpointTram = isobus::DataDescriptionIndex::SetpointTramlineCondensedWorkState1_16;
+        std::uint16_t ddiTarget = static_cast<std::uint16_t>(ddiSetpointTram);
+        std::uint16_t elementNumber = 0;
+
+        if (clients[client].try_get_element_number_for_ddi(ddiSetpointTram, elementNumber))
+        {
+            send_set_value(client, ddiTarget, elementNumber, value);
+            const auto &entry = isobus::DataDictionary::get_entry(ddiTarget);
+            std::cout << "Sent tramline setpoint: DDI " << ddiTarget
+                      << " (" << entry.to_string() << ") to element " << elementNumber
+                      << ", left=" << (clients[client].get_left_tramline_state() ? "ON" : "OFF")
+                      << ", right=" << (clients[client].get_right_tramline_state() ? "ON" : "OFF")
+                      << ", value=0x" << std::hex << value << std::dec
+                      << std::endl;
         }
         else
         {
-            // Warn once to avoid flooding if neither DDI exists in DDOP
+            static bool warnedMissingTramline = false;
             if (!warnedMissingTramline)
             {
-                std::cout << "Tramline setpoint DDI element not found; skipping send. (suppressing further logs)" << std::endl;
+                std::cout << "Tramline condensed setpoint DDI not found; skipping condensed send. (suppressing further logs)" << std::endl;
                 warnedMissingTramline = true;
             }
+        }
+        return;
+    }
+
+    // Level 1/2 or unknown: set DDI 515 to automatic/on (01b) once, avoid spamming
+    std::uint16_t ctlElem = 0;
+    if (clients[client].try_get_element_number_for_ddi(isobus::DataDescriptionIndex::TramlineControlState, ctlElem))
+    {
+        const std::uint8_t desired = 1; // automatic/on
+        if (clients[client].get_last_tramline_control_state_sent() != desired)
+        {
+            const std::uint16_t ctlDDI = static_cast<std::uint16_t>(isobus::DataDescriptionIndex::TramlineControlState);
+            send_set_value(client, ctlDDI, ctlElem, desired);
+            clients[client].set_last_tramline_control_state_sent(desired);
         }
     }
 }
