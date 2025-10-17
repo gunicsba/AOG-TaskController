@@ -92,7 +92,27 @@ bool Application::initialize()
 	static std::uint32_t lastXteTransmit = 0;
 
 	auto packetHandler = [this, serverCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
-		if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
+		if (src == 0x7F && pgn == 0xEF) // 239 - Machine Data
+		{
+			// Tramline data is at byte 8 (data[3] in our span)
+			// Bit 0 = left tramline, Bit 1 = right tramline
+			if (data.size() > 3)
+			{
+				bool leftTram = (data[3] & 0x01) != 0;
+				bool rightTram = (data[3] & 0x02) != 0;
+				static bool prevLeftTram = false;
+				static bool prevRightTram = false;
+				if ((leftTram != prevLeftTram) || (rightTram != prevRightTram))
+				{
+					std::cout << "AOG tramline change detected: left=" << (leftTram ? "ON" : "OFF")
+					          << ", right=" << (rightTram ? "ON" : "OFF") << std::endl;
+					prevLeftTram = leftTram;
+					prevRightTram = rightTram;
+				}
+				tcServer->update_tramline_states(leftTram, rightTram);
+			}
+		}
+		else if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
 		{
 			// TODO: hack to get desired section states. probably want to make a new pgn later when we need more than 16 sections
 			std::vector<bool> sectionStates;
@@ -195,31 +215,54 @@ bool Application::update()
 	speedMessagesInterface->update();
 	nmea2000MessageInterface->update();
 
-	if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100))
-	{
-		for (auto &client : tcServer->get_clients())
-		{
-			auto &state = client.second;
-			std::vector<uint8_t> data = { state.is_section_control_enabled(), state.get_number_of_sections() };
+    if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100))
+    {
+        for (auto &client : tcServer->get_clients())
+        {
+            auto &state = client.second;
+            // Only announce TC/SC to AOG if we have a connected implement that we can control
+            // Consider controllable if we've mapped either SetpointCondensedWorkState1_16 or SectionControlState
+            std::uint16_t elemDummy = 0;
+            bool hasSetpointCondensed = state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::SetpointCondensedWorkState1_16, elemDummy);
+            bool hasSectionControl = state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::SectionControlState, elemDummy);
+            if (!(hasSetpointCondensed || hasSectionControl))
+            {
+                continue; // Not controllable yet; skip announcing
+            }
 
-			std::uint8_t sectionIndex = 0;
-			while (sectionIndex < state.get_number_of_sections())
-			{
-				std::uint8_t byte = 0;
-				for (std::uint8_t i = 0; i < 8; i++)
-				{
-					if (sectionIndex < state.get_number_of_sections())
-					{
-						byte |= (state.get_section_actual_state(sectionIndex) == SectionState::ON) << i;
-						sectionIndex++;
-					}
-				}
-				data.push_back(byte);
-			}
-			udpConnections->send(0x80, 0xF0, data);
-		}
-		lastHeartbeatTransmit = isobus::SystemTiming::get_timestamp_ms();
-	}
+            std::vector<uint8_t> data = { state.is_section_control_enabled(), state.get_number_of_sections() };
+
+            std::uint8_t sectionIndex = 0;
+            while (sectionIndex < state.get_number_of_sections())
+            {
+                std::uint8_t byte = 0;
+                for (std::uint8_t i = 0; i < 8; i++)
+                {
+                    if (sectionIndex < state.get_number_of_sections())
+                    {
+                        byte |= (state.get_section_actual_state(sectionIndex) == SectionState::ON) << i;
+                        sectionIndex++;
+                    }
+                }
+                data.push_back(byte);
+            }
+
+            // Add tramline states: bit 0 = left tramline, bit 1 = right tramline
+            std::uint8_t tramlineState = 0;
+            if (state.get_left_tramline_state())
+            {
+                tramlineState |= 0x01;
+            }
+            if (state.get_right_tramline_state())
+            {
+                tramlineState |= 0x02;
+            }
+            data.push_back(tramlineState);
+
+            udpConnections->send(0x80, 0xF0, data);
+        }
+        lastHeartbeatTransmit = isobus::SystemTiming::get_timestamp_ms();
+    }
 
 	return true;
 }
