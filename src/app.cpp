@@ -215,44 +215,51 @@ bool Application::update()
 	speedMessagesInterface->update();
 	nmea2000MessageInterface->update();
 
-	if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100))
-	{
-		for (auto &client : tcServer->get_clients())
-		{
-			auto &state = client.second;
-			std::vector<uint8_t> data = { state.is_section_control_enabled(), state.get_number_of_sections() };
+    if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100))
+    {
+        for (auto &client : tcServer->get_clients())
+        {
+            auto &state = client.second;
+            // Only announce TC/SC to AOG if we have a connected implement that we can control
+            // Require that we have mapped at least the first SetpointCondensedWorkState DDI element
+            if (state.get_element_number_for_ddi(isobus::DataDescriptionIndex::SetpointCondensedWorkState1_16) == 0)
+            {
+                continue; // Not controllable yet; skip announcing
+            }
 
-			std::uint8_t sectionIndex = 0;
-			while (sectionIndex < state.get_number_of_sections())
-			{
-				std::uint8_t byte = 0;
-				for (std::uint8_t i = 0; i < 8; i++)
-				{
-					if (sectionIndex < state.get_number_of_sections())
-					{
-						byte |= (state.get_section_actual_state(sectionIndex) == SectionState::ON) << i;
-						sectionIndex++;
-					}
-				}
-				data.push_back(byte);
-			}
+            std::vector<uint8_t> data = { state.is_section_control_enabled(), state.get_number_of_sections() };
 
-			// Add tramline states: bit 0 = left tramline, bit 1 = right tramline
-			std::uint8_t tramlineState = 0;
-			if (state.get_left_tramline_state())
-			{
-				tramlineState |= 0x01;
-			}
-			if (state.get_right_tramline_state())
-			{
-				tramlineState |= 0x02;
-			}
-			data.push_back(tramlineState);
+            std::uint8_t sectionIndex = 0;
+            while (sectionIndex < state.get_number_of_sections())
+            {
+                std::uint8_t byte = 0;
+                for (std::uint8_t i = 0; i < 8; i++)
+                {
+                    if (sectionIndex < state.get_number_of_sections())
+                    {
+                        byte |= (state.get_section_actual_state(sectionIndex) == SectionState::ON) << i;
+                        sectionIndex++;
+                    }
+                }
+                data.push_back(byte);
+            }
 
-			udpConnections->send(0x80, 0xF0, data);
-		}
-		lastHeartbeatTransmit = isobus::SystemTiming::get_timestamp_ms();
-	}
+            // Add tramline states: bit 0 = left tramline, bit 1 = right tramline
+            std::uint8_t tramlineState = 0;
+            if (state.get_left_tramline_state())
+            {
+                tramlineState |= 0x01;
+            }
+            if (state.get_right_tramline_state())
+            {
+                tramlineState |= 0x02;
+            }
+            data.push_back(tramlineState);
+
+            udpConnections->send(0x80, 0xF0, data);
+        }
+        lastHeartbeatTransmit = isobus::SystemTiming::get_timestamp_ms();
+    }
 
 	return true;
 }
