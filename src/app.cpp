@@ -221,8 +221,11 @@ bool Application::update()
         {
             auto &state = client.second;
             // Only announce TC/SC to AOG if we have a connected implement that we can control
-            // Require that we have mapped at least the first SetpointCondensedWorkState DDI element
-            if (state.get_element_number_for_ddi(isobus::DataDescriptionIndex::SetpointCondensedWorkState1_16) == 0)
+            // Consider controllable if we've mapped either SetpointCondensedWorkState1_16 or SectionControlState
+            std::uint16_t elemDummy = 0;
+            bool hasSetpointCondensed = state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::SetpointCondensedWorkState1_16, elemDummy);
+            bool hasSectionControl = state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::SectionControlState, elemDummy);
+            if (!(hasSetpointCondensed || hasSectionControl))
             {
                 continue; // Not controllable yet; skip announcing
             }
