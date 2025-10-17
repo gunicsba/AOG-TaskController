@@ -133,9 +133,9 @@ std::uint16_t ClientState::get_element_number_for_ddi(isobus::DataDescriptionInd
 	static std::unordered_set<std::uint16_t> warnedDDIs;
 	static std::uint32_t lastClearTime = 0;
 	
-	// Clear warned DDIs every 5 minutes to allow re-warning if issues persist
+	// Clear warned DDIs every 30 seconds to allow re-warning if issues persist
 	std::uint32_t currentTime = isobus::SystemTiming::get_timestamp_ms();
-	if (isobus::SystemTiming::time_expired_ms(lastClearTime, 300000)) // 300000 ms = 5 minutes
+	if (isobus::SystemTiming::time_expired_ms(lastClearTime, 30000)) // 30000 ms = 30 seconds
 	{
 		warnedDDIs.clear();
 		lastClearTime = currentTime;
