@@ -93,6 +93,11 @@ private:
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);
 	void send_section_control_state(std::shared_ptr<isobus::ControlFunction> client, bool enabled);
 
+	// TODO: Implement SetValueAndAcknowledgeCommand for TC v4+ per ISO 11783-10:2015
+	// This command combines set_value with acknowledgment for improved efficiency
+	// Currently using separate send_set_value calls (TC v3 compatible)
+	void send_set_value_and_acknowledge(std::shared_ptr<isobus::ControlFunction> client, std::uint16_t ddi, std::uint16_t element, std::int32_t value);
+
 	std::map<std::shared_ptr<isobus::ControlFunction>, ClientState> clients;
 	std::map<std::shared_ptr<isobus::ControlFunction>, std::queue<std::vector<std::uint8_t>>> uploadedPools;
 };

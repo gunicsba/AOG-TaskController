@@ -570,3 +570,12 @@ void MyTCServer::update_tramline_states(bool left, bool right)
 		lastRight = right;
 	}
 }
+
+void MyTCServer::send_set_value_and_acknowledge(std::shared_ptr<isobus::ControlFunction> client, std::uint16_t ddi, std::uint16_t element, std::int32_t value)
+{
+	// Minimal helper for TC v4+ SetValueAndAcknowledgeCommand
+	// TODO: When upgrading to TC v4, replace send_set_value calls with this method
+	// For now, this is a placeholder that falls back to standard send_set_value
+	// TC v4+ spec requires combining value setting with acknowledgment in one message
+	send_set_value(client, ddi, element, value);
+}
