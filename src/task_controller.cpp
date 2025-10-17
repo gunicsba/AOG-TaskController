@@ -11,10 +11,12 @@
 
 #include "isobus/isobus/isobus_device_descriptor_object_pool_helpers.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
+#include "isobus/utility/system_timing.hpp"
 
 #include <bitset>
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 
 void ClientState::set_number_of_sections(std::uint8_t number)
 {
@@ -126,7 +128,27 @@ std::uint16_t ClientState::get_element_number_for_ddi(isobus::DataDescriptionInd
 	{
 		return it->second;
 	}
-	std::cout << "Cached element number not found for DDI " << static_cast<int>(ddi) << std::endl;
+	
+	// Track warned DDIs to avoid log spam, but clear periodically
+	static std::unordered_set<std::uint16_t> warnedDDIs;
+	static std::uint32_t lastClearTime = 0;
+	
+	// Clear warned DDIs every 5 minutes to allow re-warning if issues persist
+	std::uint32_t currentTime = isobus::SystemTiming::get_timestamp_ms();
+	if (isobus::SystemTiming::time_expired_ms(lastClearTime, 300000)) // 300000 ms = 5 minutes
+	{
+		warnedDDIs.clear();
+		lastClearTime = currentTime;
+	}
+	
+	// Only warn once per DDI (until the periodic clear)
+	std::uint16_t ddiValue = static_cast<std::uint16_t>(ddi);
+	if (warnedDDIs.find(ddiValue) == warnedDDIs.end())
+	{
+		std::cout << "Cached element number not found for DDI " << ddiValue << std::endl;
+		warnedDDIs.insert(ddiValue);
+	}
+	
 	return 0;
 }
 
