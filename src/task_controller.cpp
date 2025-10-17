@@ -702,14 +702,27 @@ void MyTCServer::update_section_states(std::vector<bool> &sectionStates)
 
 void MyTCServer::update_section_control_enabled(bool enabled)
 {
-	for (auto &client : clients)
-	{
-		if (client.second.is_section_control_enabled() != enabled)
-		{
-			client.second.set_section_control_enabled(enabled);
-			send_section_control_state(client.first, enabled);
-		}
-	}
+    for (auto &client : clients)
+    {
+        if (client.second.is_section_control_enabled() != enabled)
+        {
+            client.second.set_section_control_enabled(enabled);
+            send_section_control_state(client.first, enabled);
+
+            // Reuse SC toggle to drive Tramline Control State (DDI 515) for Level 1/2
+            std::uint16_t ctlElem = 0;
+            if (client.second.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::TramlineControlState, ctlElem))
+            {
+                const std::uint8_t desired = enabled ? 1 : 0; // 01b automatic/on when SC enabled, 00b manual/off when disabled
+                if (client.second.get_last_tramline_control_state_sent() != desired)
+                {
+                    const std::uint16_t ctlDDI = static_cast<std::uint16_t>(isobus::DataDescriptionIndex::TramlineControlState);
+                    send_set_value(client.first, ctlDDI, ctlElem, desired);
+                    client.second.set_last_tramline_control_state_sent(desired);
+                }
+            }
+        }
+    }
 }
 
 void MyTCServer::update_tramline_states(bool leftTram, bool rightTram)
