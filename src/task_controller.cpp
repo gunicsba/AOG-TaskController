@@ -16,6 +16,7 @@
 #include <bitset>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <unordered_set>
 
 void ClientState::set_number_of_sections(std::uint8_t number)
@@ -145,7 +146,31 @@ std::uint16_t ClientState::get_element_number_for_ddi(isobus::DataDescriptionInd
 	std::uint16_t ddiValue = static_cast<std::uint16_t>(ddi);
 	if (warnedDDIs.find(ddiValue) == warnedDDIs.end())
 	{
-		std::cout << "Cached element number not found for DDI " << ddiValue << std::endl;
+		// Get a human-readable name for common DDIs
+		std::string ddiName;
+		switch (ddi)
+		{
+			case isobus::DataDescriptionIndex::ActualWorkState: ddiName = "Actual Work State"; break;
+			case isobus::DataDescriptionIndex::SetpointWorkState: ddiName = "Setpoint Work State"; break;
+			case isobus::DataDescriptionIndex::SectionControlState: ddiName = "Section Control State"; break;
+			default:
+				if (ddiValue >= static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualCondensedWorkState1_16) &&
+				    ddiValue <= static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualCondensedWorkState241_256))
+				{
+					ddiName = "Actual Condensed Work State";
+				}
+				else if (ddiValue >= static_cast<std::uint16_t>(isobus::DataDescriptionIndex::SetpointCondensedWorkState1_16) &&
+				         ddiValue <= static_cast<std::uint16_t>(isobus::DataDescriptionIndex::SetpointCondensedWorkState241_256))
+				{
+					ddiName = "Setpoint Condensed Work State";
+				}
+				else
+				{
+					ddiName = "Unknown DDI";
+				}
+				break;
+		}
+		std::cout << "Cached element number not found for DDI " << ddiValue << " (" << ddiName << ")" << std::endl;
 		warnedDDIs.insert(ddiValue);
 	}
 	
@@ -556,7 +581,7 @@ void MyTCServer::send_section_control_state(std::shared_ptr<isobus::ControlFunct
 
 void MyTCServer::update_tramline_states(bool left, bool right)
 {
-	// Store tramline states for potential future use
+	// Store tramline states received from AgOpenGPS for potential future use
 	// Currently just logging for debugging
 	// Note: Tramline states are informational and don't directly control sections
 	static bool lastLeft = false;
@@ -564,7 +589,7 @@ void MyTCServer::update_tramline_states(bool left, bool right)
 	
 	if (left != lastLeft || right != lastRight)
 	{
-		std::cout << "Tramline states updated - Left: " << (left ? "ON" : "OFF") 
+		std::cout << "Tramline states updated from AgOpenGPS - Left: " << (left ? "ON" : "OFF") 
 		          << ", Right: " << (right ? "ON" : "OFF") << std::endl;
 		lastLeft = left;
 		lastRight = right;
