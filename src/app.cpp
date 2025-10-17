@@ -113,6 +113,17 @@ bool Application::initialize()
 			std::cout << "Received request from AOG to change section control state to " << (sectionControlState == 1 ? "enabled" : "disabled") << std::endl;
 			tcServer->update_section_control_enabled(sectionControlState == 1);
 		}
+		else if (src == 0x7F && pgn == 0xEF) // 239 - Tramline Data from AgOpenGPS
+		{
+			// Parse tramline states from AOG
+			// Data format: byte 0 = left tramline, byte 1 = right tramline
+			if (data.size() >= 2)
+			{
+				bool leftTramline = (data[0] != 0);
+				bool rightTramline = (data[1] != 0);
+				tcServer->update_tramline_states(leftTramline, rightTramline);
+			}
+		}
 		else if (src == 0x7F && pgn == 0xF2) // Process Data
 		{
 			auto identifier = static_cast<isobus::DataDescriptionIndex>(data[0] | (data[1] << 8));
@@ -197,6 +208,9 @@ bool Application::update()
 
 	if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100))
 	{
+		// Send heartbeat to AOG with section states
+		// Note: We intentionally do NOT include tramline states in the heartbeat payload
+		// to avoid implements discarding unexpected heartbeat formats
 		for (auto &client : tcServer->get_clients())
 		{
 			auto &state = client.second;

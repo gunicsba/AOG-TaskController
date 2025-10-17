@@ -87,6 +87,7 @@ public:
 	void request_measurement_commands();
 	void update_section_states(std::vector<bool> &sectionStates);
 	void update_section_control_enabled(bool enabled);
+	void update_tramline_states(bool left, bool right);
 
 private:
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);

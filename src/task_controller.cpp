@@ -531,3 +531,20 @@ void MyTCServer::send_section_control_state(std::shared_ptr<isobus::ControlFunct
 {
 	send_set_value(client, static_cast<std::uint16_t>(isobus::DataDescriptionIndex::SectionControlState), clients[client].get_element_number_for_ddi(isobus::DataDescriptionIndex::SectionControlState), enabled ? 1 : 0);
 }
+
+void MyTCServer::update_tramline_states(bool left, bool right)
+{
+	// Store tramline states for potential future use
+	// Currently just logging for debugging
+	// Note: Tramline states are informational and don't directly control sections
+	static bool lastLeft = false;
+	static bool lastRight = false;
+	
+	if (left != lastLeft || right != lastRight)
+	{
+		std::cout << "Tramline states updated - Left: " << (left ? "ON" : "OFF") 
+		          << ", Right: " << (right ? "ON" : "OFF") << std::endl;
+		lastLeft = left;
+		lastRight = right;
+	}
+}
