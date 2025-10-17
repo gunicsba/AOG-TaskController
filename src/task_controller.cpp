@@ -11,6 +11,7 @@
 #include <bitset>
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 
 #include "settings.hpp"
 
@@ -123,13 +124,19 @@ void ClientState::mark_measurement_commands_sent()
 
 std::uint16_t ClientState::get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const
 {
-	auto it = ddiToElementNumber.find(ddi);
-	if (it != ddiToElementNumber.end())
-	{
-		return it->second;
-	}
-	std::cout << "Cached element number not found for DDI " << static_cast<int>(ddi) << std::endl;
-	return 0;
+    auto it = ddiToElementNumber.find(ddi);
+    if (it != ddiToElementNumber.end())
+    {
+        return it->second;
+    }
+    // Warn once per DDI to avoid log spam
+    static std::unordered_set<std::uint16_t> warnedDDIs;
+    const auto ddiValue = static_cast<std::uint16_t>(ddi);
+    if (warnedDDIs.insert(ddiValue).second)
+    {
+        std::cout << "Cached element number not found for DDI " << ddiValue << " (suppressing further logs)" << std::endl;
+    }
+    return 0;
 }
 
 void ClientState::set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber)
@@ -664,8 +671,14 @@ void MyTCServer::send_tramline_setpoint_states(std::shared_ptr<isobus::ControlFu
                   << ", value=0x" << std::hex << value << std::dec
                   << std::endl;
 	}
-	else
-	{
-		std::cout << "Tramline setpoint DDI element not found; skipping send." << std::endl;
-	}
+    else
+    {
+        // Warn once to avoid flooding if the DDOP does not define tramline setpoint
+        static bool warnedMissingTramline = false;
+        if (!warnedMissingTramline)
+        {
+            std::cout << "Tramline setpoint DDI element not found; skipping send. (suppressing further logs)" << std::endl;
+            warnedMissingTramline = true;
+        }
+    }
 }
