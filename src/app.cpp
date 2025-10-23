@@ -282,16 +282,6 @@ bool Application::update() {
 				data.push_back(byte);
 			}
 
-			// Add tramline states: bit 0 = left tramline, bit 1 = right tramline
-			std::uint8_t tramlineState = 0;
-			if (state.get_left_tramline_state()) {
-				tramlineState |= 0x01;
-			}
-			if (state.get_right_tramline_state()) {
-				tramlineState |= 0x02;
-			}
-			data.push_back(tramlineState);
-
 			udpConnections->send(0x80, 0xF0, data);
 		}
 		lastHeartbeatTransmit = isobus::SystemTiming::get_timestamp_ms();
