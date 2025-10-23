@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "isobus/isobus/isobus_data_dictionary.hpp"
 #include "isobus/isobus/isobus_device_descriptor_object_pool.hpp"
 #include "isobus/isobus/isobus_standard_data_description_indices.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
@@ -51,6 +52,10 @@ public:
 	bool try_get_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t& elementNumber) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
 
+	// Element work state management
+	void set_element_work_state(std::uint16_t elementNumber, bool isWorking);
+	bool get_element_work_state(std::uint16_t elementNumber, bool &isWorking) const;
+
 	bool get_left_tramline_state() const;
 	void set_left_tramline_state(bool state);
 	bool get_right_tramline_state() const;
@@ -91,6 +96,7 @@ private:
 	std::vector<std::uint8_t> sectionActualStates; // 2 bits per section (0 = off, 1 = on, 2 = error, 3 = not installed)
 	bool setpointWorkState = false; ///< The overall work state desired
 	bool actualWorkState = false; ///< The overall work state actual
+	std::map<std::uint16_t, bool> elementWorkStates; ///< Work state per element (element number -> is working)
 	bool isSectionControlEnabled = false; ///< Stores auto vs manual mode setting
 	bool leftTramlineState = false; ///< Left tramline on/off state
 	bool rightTramlineState = false; ///< Right tramline on/off state
@@ -101,7 +107,7 @@ private:
 	std::int32_t uniqueABReferenceID = 0; ///< DDI 508 Unique A-B Guidance Reference Line ID
 	std::int32_t trackNumberToLeft = 0; ///< DDI 511 Track Number to the left (1-1=0)
 	std::int32_t trackNumberToRight = 2; ///< DDI 510 Track Number to the right (1+1=2)
-    std::uint8_t lastSentTramlineControlState = 0xFF; ///< Cache last DDI 515 value to avoid spamming
+	std::uint8_t lastSentTramlineControlState = 0xFF; ///< Cache last DDI 515 value to avoid spamming
 };
 
 // Create the task controller server object, this will handle all the ISOBUS communication for us
@@ -131,7 +137,7 @@ public:
 	void update_section_control_enabled(bool enabled);
 	void update_tramline_states(bool leftTram, bool rightTram);
 	void handle_tramline_sequence(std::shared_ptr<isobus::ControlFunction> client);
-	
+
 	// Add the missing methods for tramline control
 	void set_left_tramline_state(bool state);
 	void set_right_tramline_state(bool state);
