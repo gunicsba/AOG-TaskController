@@ -19,24 +19,22 @@
 
 using boost::asio::ip::udp;
 
-Application::Application(std::shared_ptr<isobus::CANHardwarePlugin> canDriver) :
-  canDriver(canDriver)
-{
-}
+Application::Application(std::shared_ptr<isobus::CANHardwarePlugin> canDriver)
+		: canDriver(canDriver) {}
 
-bool Application::initialize()
-{
+bool Application::initialize() {
 	settings->load();
-	if (nullptr == canDriver)
-	{
-		std::cout << "Unable to find a CAN driver. Please make sure the selected driver is installed." << std::endl;
+	if (nullptr == canDriver) {
+		std::cout << "Unable to find a CAN driver. Please make sure the selected "
+								 "driver is installed."
+							<< std::endl;
 		return false;
 	}
 	isobus::CANHardwareInterface::set_number_of_can_channels(1);
 	isobus::CANHardwareInterface::assign_can_channel_frame_handler(0, canDriver);
 
-	if ((!isobus::CANHardwareInterface::start()) || (!canDriver->get_is_valid()))
-	{
+	if ((!isobus::CANHardwareInterface::start()) ||
+			(!canDriver->get_is_valid())) {
 		std::cout << "Failed to start CAN hardware interface." << std::endl;
 		return false;
 	}
@@ -47,101 +45,162 @@ bool Application::initialize()
 	ourNAME.set_arbitrary_address_capable(true);
 	ourNAME.set_industry_group(2);
 	ourNAME.set_device_class(0);
-	ourNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::TaskController));
+	ourNAME.set_function_code(
+			static_cast<std::uint8_t>(isobus::NAME::Function::TaskController));
 	ourNAME.set_identity_number(20);
 	ourNAME.set_ecu_instance(0);
-	ourNAME.set_function_instance(0); // TC #1. If you want to change the TC number, change this.
+	ourNAME.set_function_instance(
+			0); // TC #1. If you want to change the TC number, change this.
 	ourNAME.set_device_class_instance(0);
 	ourNAME.set_manufacturer_code(1407);
 
-	auto serverCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(ourNAME, 0, isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer); // The preferred address for a TC is defined in ISO 11783
+	auto serverCF =
+			isobus::CANNetworkManager::CANNetwork.create_internal_control_function(
+					ourNAME, 0, isobus::preferred_addresses::IndustryGroup2::
+													TaskController_MappingComputer); // The preferred
+																													 // address for a TC
+																													 // is defined in ISO
+																													 // 11783
 	auto addressClaimedFuture = std::async(std::launch::async, [&serverCF]() {
 		while (!serverCF->get_address_valid())
-			std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	});
 
 	// If this fails, probably the update thread is not started
 	addressClaimedFuture.wait_for(std::chrono::seconds(5));
-	if (!serverCF->get_address_valid())
-	{
-		std::cout << "Failed to claim address for TC server. The control function might be invalid." << std::endl;
+	if (!serverCF->get_address_valid()) {
+		std::cout << "Failed to claim address for TC server. The control function "
+								 "might be invalid."
+							<< std::endl;
 		return false;
 	}
 
 	tcServer = std::make_shared<MyTCServer>(serverCF);
 	auto &languageInterface = tcServer->get_language_command_interface();
-	languageInterface.set_language_code("en"); // This is the default, but you can change it if you want
-	languageInterface.set_country_code("US"); // This is the default, but you can change it if you want
+	languageInterface.set_language_code(
+			"en"); // This is the default, but you can change it if you want
+	languageInterface.set_country_code(
+			"US"); // This is the default, but you can change it if you want
 	tcServer->initialize();
-	tcServer->set_task_totals_active(true); // TODO: make this dynamic based on status in AOG
+	tcServer->set_task_totals_active(
+			true); // TODO: make this dynamic based on status in AOG
 
 	// Initialize speed and distance messages
-	speedMessagesInterface = std::make_unique<isobus::SpeedMessagesInterface>(serverCF, true, true, true, false); //TODO: make configurable whether to send these messages
+	speedMessagesInterface = std::make_unique<isobus::SpeedMessagesInterface>(
+			serverCF, true, true, true,
+			false); // TODO: make configurable whether to send these messages
 	speedMessagesInterface->initialize();
-	nmea2000MessageInterface = std::make_unique<isobus::NMEA2000MessageInterface>(serverCF, false, false, false, false, false, false, false);
+	nmea2000MessageInterface = std::make_unique<isobus::NMEA2000MessageInterface>(
+			serverCF, false, false, false, false, false, false, false);
 	nmea2000MessageInterface->initialize();
-	nmea2000MessageInterface->set_enable_sending_cog_sog_cyclically(true); // TODO: make configurable whether to send these messages
+	nmea2000MessageInterface->set_enable_sending_cog_sog_cyclically(
+			true); // TODO: make configurable whether to send these messages
 
-	speedMessagesInterface->wheelBasedSpeedTransmitData.set_implement_start_stop_operations_state(isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::ImplementStartStopOperations::NotAvailable);
-	speedMessagesInterface->wheelBasedSpeedTransmitData.set_key_switch_state(isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::KeySwitchState::NotAvailable);
-	speedMessagesInterface->wheelBasedSpeedTransmitData.set_operator_direction_reversed_state(isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::OperatorDirectionReversed::NotAvailable);
-	speedMessagesInterface->machineSelectedSpeedTransmitData.set_speed_source(isobus::SpeedMessagesInterface::MachineSelectedSpeedData::SpeedSource::NavigationBasedSpeed);
+	speedMessagesInterface->wheelBasedSpeedTransmitData
+			.set_implement_start_stop_operations_state(
+					isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::
+							ImplementStartStopOperations::NotAvailable);
+	speedMessagesInterface->wheelBasedSpeedTransmitData.set_key_switch_state(
+			isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::
+					KeySwitchState::NotAvailable);
+	speedMessagesInterface->wheelBasedSpeedTransmitData
+			.set_operator_direction_reversed_state(
+					isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::
+							OperatorDirectionReversed::NotAvailable);
+	speedMessagesInterface->machineSelectedSpeedTransmitData.set_speed_source(
+			isobus::SpeedMessagesInterface::MachineSelectedSpeedData::SpeedSource::
+					NavigationBasedSpeed);
 
 	std::cout << "Task controller server started." << std::endl;
 
 	static std::uint8_t xteSid = 0;
 	static std::uint32_t lastXteTransmit = 0;
 
-	auto packetHandler = [this, serverCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
-		if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
+	auto packetHandler = [this, serverCF](std::uint8_t src, std::uint8_t pgn,
+																				std::span<std::uint8_t> data) {
+		if (src == 0x7F && pgn == 0xEF) // 239 - Machine Data
 		{
-			// TODO: hack to get desired section states. probably want to make a new pgn later when we need more than 16 sections
+			// Tramline data is at byte 8 (data[3] in our span)
+			// Bit 0 = left tramline, Bit 1 = right tramline
+			if (data.size() > 3) {
+				bool leftTram = (data[3] & 0x01) != 0;
+				bool rightTram = (data[3] & 0x02) != 0;
+				static bool prevLeftTram = false;
+				static bool prevRightTram = false;
+				if ((leftTram != prevLeftTram) || (rightTram != prevRightTram)) {
+/*					std::cout << "AOG tramline change detected: left="
+										<< (leftTram ? "ON" : "OFF")
+										<< ", right=" << (rightTram ? "ON" : "OFF") << std::endl;
+*/					prevLeftTram = leftTram;
+					prevRightTram = rightTram;
+				}
+				tcServer->update_tramline_states(leftTram, rightTram);
+			}
+		} else if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
+		{
+			// TODO: hack to get desired section states. probably want to make a new
+			// pgn later when we need more than 16 sections
 			std::vector<bool> sectionStates;
-			for (std::uint8_t i = 0; i < 8; i++)
-			{
+			for (std::uint8_t i = 0; i < 8; i++) {
 				sectionStates.push_back(data[6] & (1 << i));
 			}
-			for (std::uint8_t i = 0; i < 8; i++)
-			{
+			for (std::uint8_t i = 0; i < 8; i++) {
 				sectionStates.push_back(data[7] & (1 << i));
 			}
 
 			tcServer->update_section_states(sectionStates);
-		}
-		else if (src == 0x7F && pgn == 0xF1) // 241 - Section Control
+		} else if (src == 0x7F && pgn == 0xF1) // 241 - Section Control
 		{
 			std::uint8_t sectionControlState = data[0];
-			std::cout << "Received request from AOG to change section control state to " << (sectionControlState == 1 ? "enabled" : "disabled") << std::endl;
+			std::cout
+					<< "Received request from AOG to change section control state to "
+					<< (sectionControlState == 1 ? "enabled" : "disabled") << std::endl;
 			tcServer->update_section_control_enabled(sectionControlState == 1);
-		}
-		else if (src == 0x7F && pgn == 0xF2) // Process Data
+		} else if (src == 0x7F && pgn == 0xF2) // Process Data
 		{
-			auto identifier = static_cast<isobus::DataDescriptionIndex>(data[0] | (data[1] << 8));
+			auto identifier =
+					static_cast<isobus::DataDescriptionIndex>(data[0] | (data[1] << 8));
 
-			std::int32_t value = data[2] | (data[3] << 8) | (data[4] << 16) | (data[5] << 24);
-			if (identifier == isobus::DataDescriptionIndex::ActualSpeed)
-			{
+			std::int32_t value =
+					data[2] | (data[3] << 8) | (data[4] << 16) | (data[5] << 24);
+			if (identifier == isobus::DataDescriptionIndex::ActualSpeed) {
 				std::uint16_t speed = std::abs(value);
-				auto direction = value < 0 ? isobus::SpeedMessagesInterface::MachineDirection::Reverse : isobus::SpeedMessagesInterface::MachineDirection::Forward;
-				speedMessagesInterface->groundBasedSpeedTransmitData.set_machine_direction_of_travel(direction);
-				speedMessagesInterface->wheelBasedSpeedTransmitData.set_machine_direction_of_travel(direction);
-				speedMessagesInterface->machineSelectedSpeedTransmitData.set_machine_direction_of_travel(direction);
+				auto direction =
+						value < 0
+								? isobus::SpeedMessagesInterface::MachineDirection::Reverse
+								: isobus::SpeedMessagesInterface::MachineDirection::Forward;
+				speedMessagesInterface->groundBasedSpeedTransmitData
+						.set_machine_direction_of_travel(direction);
+				speedMessagesInterface->wheelBasedSpeedTransmitData
+						.set_machine_direction_of_travel(direction);
+				speedMessagesInterface->machineSelectedSpeedTransmitData
+						.set_machine_direction_of_travel(direction);
 
-				speedMessagesInterface->groundBasedSpeedTransmitData.set_machine_speed(speed);
-				speedMessagesInterface->wheelBasedSpeedTransmitData.set_machine_speed(speed);
-				speedMessagesInterface->machineSelectedSpeedTransmitData.set_machine_speed(speed);
+				speedMessagesInterface->groundBasedSpeedTransmitData.set_machine_speed(
+						speed);
+				speedMessagesInterface->wheelBasedSpeedTransmitData.set_machine_speed(
+						speed);
+				speedMessagesInterface->machineSelectedSpeedTransmitData
+						.set_machine_speed(speed);
 
-				speedMessagesInterface->groundBasedSpeedTransmitData.set_machine_distance(0); // TODO: Implement distance
-				speedMessagesInterface->wheelBasedSpeedTransmitData.set_machine_distance(0); // TODO: Implement distance
-				speedMessagesInterface->machineSelectedSpeedTransmitData.set_machine_distance(0); // TODO: Implement distance
+				speedMessagesInterface->groundBasedSpeedTransmitData
+						.set_machine_distance(0); // TODO: Implement distance
+				speedMessagesInterface->wheelBasedSpeedTransmitData
+						.set_machine_distance(0); // TODO: Implement distance
+				speedMessagesInterface->machineSelectedSpeedTransmitData
+						.set_machine_distance(0); // TODO: Implement distance
 
-				auto &cog_sog_message = nmea2000MessageInterface->get_cog_sog_transmit_message();
+				auto &cog_sog_message =
+						nmea2000MessageInterface->get_cog_sog_transmit_message();
 				cog_sog_message.set_sequence_id(nmea2000SequenceIdentifier++);
 				cog_sog_message.set_speed_over_ground(speed);
 				cog_sog_message.set_course_over_ground(0); // TODO: Implement course
-				cog_sog_message.set_course_over_ground_reference(isobus::NMEA2000Messages::CourseOverGroundSpeedOverGroundRapidUpdate::CourseOverGroundReference::NotApplicableOrNull);
-			}
-			else if (identifier == isobus::DataDescriptionIndex::GuidanceLineDeviation)
-			{
+				cog_sog_message.set_course_over_ground_reference(
+						isobus::NMEA2000Messages::
+								CourseOverGroundSpeedOverGroundRapidUpdate::
+										CourseOverGroundReference::NotApplicableOrNull);
+			} else if (identifier ==
+								 isobus::DataDescriptionIndex::GuidanceLineDeviation) {
 				std::int32_t xte = value / 1000; // Convert from mm to m
 				static const std::uint8_t xteMode = 0b00000001;
 				xteSid = xteSid % 253 + 1;
@@ -149,29 +208,38 @@ bool Application::initialize()
 				std::uint8_t status = 0; // TODO: navigation terminated status
 
 				std::array<std::uint8_t, 8> xteData = {
-					xteSid, // Sequence ID
-					static_cast<std::uint8_t>(xteMode | 0b00110000 | (status == 1 ? 0b00000000 : 0b01000000)), // XTE mode (4 bits) + Reserved (2 bits set to 1) + Navigation Terminated (2 bits)
-					static_cast<std::uint8_t>(xte & 0xFF), // XTE LSB
-					static_cast<std::uint8_t>((xte >> 8) & 0xFF), // XTE
-					static_cast<std::uint8_t>((xte >> 16) & 0xFF), // XTE
-					static_cast<std::uint8_t>((xte >> 24) & 0xFF), // XTE MSB
-					0xFF, // Reserved byte 1 (all bits set to 1)
-					0xFF // Reserved byte 2 (all bits set to 1)
+						xteSid, // Sequence ID
+						static_cast<std::uint8_t>(
+								xteMode | 0b00110000 |
+								(status == 1 ? 0b00000000 : 0b01000000)), // XTE mode (4 bits) +
+																													// Reserved (2 bits
+																													// set to 1) +
+																													// Navigation
+																													// Terminated (2 bits)
+						static_cast<std::uint8_t>(xte & 0xFF),        // XTE LSB
+						static_cast<std::uint8_t>((xte >> 8) & 0xFF), // XTE
+						static_cast<std::uint8_t>((xte >> 16) & 0xFF), // XTE
+						static_cast<std::uint8_t>((xte >> 24) & 0xFF), // XTE MSB
+						0xFF, // Reserved byte 1 (all bits set to 1)
+						0xFF  // Reserved byte 2 (all bits set to 1)
 				};
-				if (isobus::SystemTiming::time_expired_ms(lastXteTransmit, 1000)) // Transmit every second
+				if (isobus::SystemTiming::time_expired_ms(
+								lastXteTransmit, 1000)) // Transmit every second
 				{
-					if (isobus::CANNetworkManager::CANNetwork.send_can_message(0x1F903, xteData.data(), xteData.size(), serverCF))
-					{
+					if (isobus::CANNetworkManager::CANNetwork.send_can_message(
+									0x1F903, xteData.data(), xteData.size(), serverCF)) {
 						lastXteTransmit = isobus::SystemTiming::get_timestamp_ms();
 					}
 				}
-			}
-			else if (static_cast<std::uint16_t>(identifier) == 597 /*isobus::DataDescriptionIndex::TotalDistance*/)
-			{
+			} else if (static_cast<std::uint16_t>(identifier) ==
+								 597 /*isobus::DataDescriptionIndex::TotalDistance*/) {
 				auto distance = static_cast<std::uint32_t>(value);
-				speedMessagesInterface->groundBasedSpeedTransmitData.set_machine_distance(distance);
-				speedMessagesInterface->wheelBasedSpeedTransmitData.set_machine_distance(distance);
-				speedMessagesInterface->machineSelectedSpeedTransmitData.set_machine_distance(distance);
+				speedMessagesInterface->groundBasedSpeedTransmitData
+						.set_machine_distance(distance);
+				speedMessagesInterface->wheelBasedSpeedTransmitData
+						.set_machine_distance(distance);
+				speedMessagesInterface->machineSelectedSpeedTransmitData
+						.set_machine_distance(distance);
 			}
 		}
 	};
@@ -183,8 +251,7 @@ bool Application::initialize()
 	return true;
 }
 
-bool Application::update()
-{
+bool Application::update() {
 	static std::uint32_t lastHeartbeatTransmit = 0;
 
 	udpConnections->handle_address_detection();
@@ -195,27 +262,26 @@ bool Application::update()
 	speedMessagesInterface->update();
 	nmea2000MessageInterface->update();
 
-	if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100))
-	{
-		for (auto &client : tcServer->get_clients())
-		{
+	if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100)) {
+		for (auto &client : tcServer->get_clients()) {
 			auto &state = client.second;
-			std::vector<uint8_t> data = { state.is_section_control_enabled(), state.get_number_of_sections() };
+			std::vector<uint8_t> data = {state.is_section_control_enabled(),
+																	 state.get_number_of_sections()};
 
 			std::uint8_t sectionIndex = 0;
-			while (sectionIndex < state.get_number_of_sections())
-			{
+			while (sectionIndex < state.get_number_of_sections()) {
 				std::uint8_t byte = 0;
-				for (std::uint8_t i = 0; i < 8; i++)
-				{
-					if (sectionIndex < state.get_number_of_sections())
-					{
-						byte |= (state.get_section_actual_state(sectionIndex) == SectionState::ON) << i;
+				for (std::uint8_t i = 0; i < 8; i++) {
+					if (sectionIndex < state.get_number_of_sections()) {
+						byte |= (state.get_section_actual_state(sectionIndex) ==
+										 SectionState::ON)
+										<< i;
 						sectionIndex++;
 					}
 				}
 				data.push_back(byte);
 			}
+
 			udpConnections->send(0x80, 0xF0, data);
 		}
 		lastHeartbeatTransmit = isobus::SystemTiming::get_timestamp_ms();
@@ -224,8 +290,8 @@ bool Application::update()
 	return true;
 }
 
-void Application::stop()
-{
+void Application::stop() {
 	tcServer->terminate();
 	isobus::CANHardwareInterface::stop();
 }
+

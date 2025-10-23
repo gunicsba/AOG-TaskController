@@ -107,6 +107,10 @@ local AOGFields = {
     PGN254_SC1to8 = ProtoField.uint8("PGN254_SC1to8", "SC1to8", base.HEX),
     PGN254_SC9to16 = ProtoField.uint8("PGN254_SC9to16", "SC9to16", base.HEX),
 
+    PGN240_SectionControlEnabled = ProtoField.uint8("PGN240_SectionControlEnabled", "Section Control Enabled", base.DEC),
+    PGN240_NumberOfSections = ProtoField.uint8("PGN240_NumberOfSections", "Number of Sections", base.DEC),
+    PGN240_Tram = ProtoField.uint8("PGN240_Tram", "Tramline", base.HEX),
+
     genericIP = ProtoField.ipv4("GenericIP.IPv4", "IPv4", base.DEC),
     genericSubnet = ProtoField.ipv4("GenericIP.IPSubnet", "Subnet", base.DEC),
     genericShortIPRange = ProtoField.string("GenericIP.IPSubnet", "Subnet", base.STRING),
@@ -410,6 +414,26 @@ function AOGProtocol_proto.dissector(buffer, pinfo, tree)
             end
             if MinorPGN == 0x80 then -- 128
                 pinfo.cols.info = "*************** ISOBUS -> AOG data"
+            end
+            if MinorPGN == 0xf0 then -- 240
+                local length = buffer(4, 1):uint()
+                if length >= 1 then
+                    subtree:add(AOGFields.PGN240_SectionControlEnabled, buffer(5, 1))
+                end
+                if length >= 2 then
+                    subtree:add(AOGFields.PGN240_NumberOfSections, buffer(6, 1))
+                end
+                -- Section states are after the number of sections
+                local numSections = buffer(6, 1):uint()
+                local sectionBytes = math.ceil(numSections / 8)
+                local tramByteIndex = 7 + sectionBytes
+                if length >= (2 + sectionBytes + 1) and buffer:len() > tramByteIndex then
+                    local tramByte = buffer(tramByteIndex, 1):uint()
+                    subtree:add(AOGFields.PGN240_Tram, buffer(tramByteIndex, 1)):append_text(string.format(" (Left: %s, Right: %s)",
+                        (tramByte & 0x01) ~= 0 and "ON" or "OFF",
+                        (tramByte & 0x02) ~= 0 and "ON" or "OFF"))
+                end
+                pinfo.cols.info = "ISOBUS Section Info (with tramline)"
             end
         end
         if MajorPGN == 0x7f then -- steer module
