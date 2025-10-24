@@ -50,8 +50,8 @@ public:
 	void mark_measurement_commands_sent();
 	std::uint16_t get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
 	bool try_get_element_number_for_ddi(
-		isobus::DataDescriptionIndex ddi,
-		std::uint16_t &elementNumber) const;
+	  isobus::DataDescriptionIndex ddi,
+	  std::uint16_t &elementNumber) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
 
 	// Element work state management
@@ -130,7 +130,12 @@ public:
 	bool get_is_enough_memory_available(std::uint32_t) override;
 	void identify_task_controller(std::uint8_t) override;
 	void on_client_timeout(std::shared_ptr<isobus::ControlFunction> partner) override;
-	void on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunction> partner, std::uint16_t dataDescriptionIndex, std::uint16_t elementNumber, std::uint8_t errorCodesFromClient, ProcessData[...] bool on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
+	void on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunction> partner,
+	                                 std::uint16_t dataDescriptionIndex,
+	                                 std::uint16_t elementNumber,
+	                                 std::uint8_t errorCodesFromClient,
+	                                 ProcessDataCommands processDataCommand) override;
+	bool on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
 	                      std::uint16_t dataDescriptionIndex,
 	                      std::uint16_t elementNumber,
 	                      std::int32_t processDataValue,
