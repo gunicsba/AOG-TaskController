@@ -13,11 +13,11 @@
 #include "isobus/isobus/isobus_device_descriptor_object_pool.hpp"
 #include "isobus/isobus/isobus_standard_data_description_indices.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
-#include "isobus/isobus/isobus_data_dictionary.hpp"
 
 #include <cstdint>
 #include <map>
 #include <queue>
+#include <vector>
 
 constexpr std::uint8_t NUMBER_SECTIONS_PER_CONDENSED_MESSAGE = 16;
 
@@ -49,7 +49,9 @@ public:
 	bool are_measurement_commands_sent() const;
 	void mark_measurement_commands_sent();
 	std::uint16_t get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
-	bool try_get_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t& elementNumber) const;
+	bool try_get_element_number_for_ddi(
+		isobus::DataDescriptionIndex ddi,
+		std::uint16_t &elementNumber) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
 
 	// Element work state management
@@ -115,7 +117,11 @@ class MyTCServer : public isobus::TaskControllerServer
 {
 public:
 	MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internalControlFunction);
-	bool activate_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF, ObjectPoolActivationError &, ObjectPoolErrorCodes &, std::uint16_t &, std::uint16_t &) override;
+	bool activate_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF,
+	                          ObjectPoolActivationError &,
+	                          ObjectPoolErrorCodes &,
+	                          std::uint16_t &,
+	                          std::uint16_t &) override;
 	bool change_designator(std::shared_ptr<isobus::ControlFunction>, std::uint16_t, const std::vector<std::uint8_t> &) override;
 	bool deactivate_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF) override;
 	bool delete_device_descriptor_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF, ObjectPoolDeletionErrors &) override;
@@ -124,8 +130,7 @@ public:
 	bool get_is_enough_memory_available(std::uint32_t) override;
 	void identify_task_controller(std::uint8_t) override;
 	void on_client_timeout(std::shared_ptr<isobus::ControlFunction> partner) override;
-	void on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunction> partner, std::uint16_t dataDescriptionIndex, std::uint16_t elementNumber, std::uint8_t errorCodesFromClient, ProcessDataCommands processDataCommand) override;
-	bool on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
+	void on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunction> partner, std::uint16_t dataDescriptionIndex, std::uint16_t elementNumber, std::uint8_t errorCodesFromClient, ProcessData[...] bool on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
 	                      std::uint16_t dataDescriptionIndex,
 	                      std::uint16_t elementNumber,
 	                      std::int32_t processDataValue,
