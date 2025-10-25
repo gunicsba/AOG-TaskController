@@ -125,6 +125,7 @@ bool Application::initialize()
 					prevRightTram = rightTram;
 					tcServer->set_left_tramline_state(leftTram);
 					tcServer->set_right_tramline_state(rightTram);
+					tcServer->update_tramline_states(leftTram, rightTram);
 				}
 			}
 		}

@@ -70,20 +70,28 @@ public:
 	// Selected tramline control level we last sent via DDI 506
 	void set_selected_tramline_control_level(std::uint8_t level);
 	std::uint8_t get_selected_tramline_control_level() const;
+	
+	// Tramline control state (DDI 515) 
+	bool is_tramline_control_enabled() const;
+	void set_tramline_control_enabled(bool state);
 
 	// Track number (DDI 509) we provide to implement for testing
 	void set_track_number(std::uint16_t track);
 	std::uint16_t get_track_number() const;
 
 	// Tramline sequence information
-	void set_tramline_sequence_number(std::int32_t sequence);
-	std::int32_t get_tramline_sequence_number() const;
-	void set_unique_ab_reference_id(std::int32_t id);
-	std::int32_t get_unique_ab_reference_id() const;
+	void set_tramline_sequence_number(std::uint32_t sequence);
+	std::uint32_t get_tramline_sequence_number() const;
+	void set_unique_ab_reference_id(std::uint32_t id);
+	std::uint32_t get_unique_ab_reference_id() const;
 	void set_track_number_to_left(std::int32_t track);
 	std::int32_t get_track_number_to_left() const;
 	void set_track_number_to_right(std::int32_t track);
 	std::int32_t get_track_number_to_right() const;
+
+	// Track Number Shift (DDI 669) functionality
+	void set_track_number_shift(std::int32_t shift);
+	std::int32_t get_track_number_shift() const;
 
 	void set_last_tramline_control_state_sent(std::uint8_t state);
 	std::uint8_t get_last_tramline_control_state_sent() const;
@@ -105,10 +113,11 @@ private:
 	std::uint8_t tramlineControlLevelSupport = 0; ///< Bitmask: bit0=L1, bit1=L2, bit2=L3
 	std::uint8_t selectedTramlineControlLevel = 0xFF; ///< Last sent 506 value (0xFF = unknown)
 	std::uint16_t trackNumber = 1; ///< DDI 509 Actual Track Number (test) - Start with 1 for 1/3 pattern
-	std::int32_t tramlineSequenceNumber = 0; ///< DDI 507 Tramline Sequence Number
-	std::int32_t uniqueABReferenceID = 0; ///< DDI 508 Unique A-B Guidance Reference Line ID
-	std::int32_t trackNumberToLeft = 0; ///< DDI 511 Track Number to the left (1-1=0)
-	std::int32_t trackNumberToRight = 2; ///< DDI 510 Track Number to the right (1+1=2)
+	std::uint32_t tramlineSequenceNumber = 1; ///< DDI 507 Tramline Sequence Number (start with 1 as per specification)
+	std::uint32_t uniqueABReferenceID = 1; ///< DDI 508 Unique A-B Guidance Reference Line ID (start with 1 as per specification)
+	std::int32_t trackNumberToLeft = 0; ///< DDI 511 Track Number to the left (will be calculated)
+	std::int32_t trackNumberToRight = 2; ///< DDI 510 Track Number to the right (will be calculated)
+	std::int32_t trackNumberShift = 0; ///< DDI 669 Track Number Shift (default: 0 - no shift)
 	std::uint8_t lastSentTramlineControlState = 0xFF; ///< Cache last DDI 515 value to avoid spamming
 };
 
@@ -151,6 +160,8 @@ public:
 	// Add the missing methods for tramline control
 	void set_left_tramline_state(bool state);
 	void set_right_tramline_state(bool state);
+	void send_setpoint_tramline_control_level(std::shared_ptr<isobus::ControlFunction> client);
+	void set_track_number_shift(std::shared_ptr<isobus::ControlFunction> client, std::int32_t shift);
 
 private:
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);
