@@ -14,6 +14,11 @@
 #include "isobus/isobus/isobus_standard_data_description_indices.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
 
+#include "console_footer.hpp"
+
+// Add the console footer include
+#include "console_footer.hpp"
+
 #include <cstdint>
 #include <map>
 #include <queue>

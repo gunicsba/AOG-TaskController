@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "logging.cpp"
 #include "settings.hpp"
+#include "console_footer.hpp"
 
 #include "isobus/hardware_integration/available_can_drivers.hpp"
 #include "isobus/isobus/can_stack_logger.hpp"
@@ -248,6 +249,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	std::cout << std::endl;
 	std::cout << "AOG-TC version: v" << std::string(git::Describe()) + (git::AnyUncommittedChanges() ? "-dirty" : "") << std::endl;
 
+	// Initialize the console footer
+	g_consoleFooter.updateFooterLine(0, "Status: Initializing... | Version: " + std::string(git::Describe()) + (git::AnyUncommittedChanges() ? "-dirty" : ""));
+	g_consoleFooter.updateFooterLine(1, "CAN Adapter: Not connected | Clients: 0");
+	g_consoleFooter.updateFooterLine(2, "Press Ctrl+C to stop | Uptime: 0s");
+	g_consoleFooter.displayFooter();
+
 	if (!argumentsProcessed)
 	{
 		std::cout << "Failed to process arguments, exiting..." << std::endl;
@@ -303,6 +310,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	MSG msg;
+    auto startTime = std::chrono::steady_clock::now();
+    int updateCounter = 0;
+    
 	while (running)
 	{
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -316,9 +326,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			std::cout << "Something unexpected happened, stopping application..." << std::endl;
 			break;
 		}
+        
+        // Update footer periodically (every 100 updates)
+        updateCounter++;
+        if (updateCounter >= 100)
+        {
+            updateCounter = 0;
+            
+            // Get application status information
+            auto currentTime = std::chrono::steady_clock::now();
+            auto uptime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+            
+            // Get number of connected clients (this would need to be implemented in your app class)
+            int clientCount = 0; // Placeholder - you'd need to get this from your app
+            
+            // Update footer with current status
+            g_consoleFooter.updateFooterLine(0, "Status: Running | Version: " + std::string(git::Describe()) + (git::AnyUncommittedChanges() ? "-dirty" : ""));
+            g_consoleFooter.updateFooterLine(1, "CAN Adapter: Connected | Clients: " + std::to_string(clientCount));
+            g_consoleFooter.updateFooterLine(2, "Press Ctrl+C to stop | Uptime: " + std::to_string(uptime) + "s");
+            g_consoleFooter.displayFooter();
+        }
 	}
 
 	// Clean up
-	app.stop();
+    app.stop();
+    
+    // Clear footer before exit
+    g_consoleFooter.clearFooter();
 	return 0;
 }

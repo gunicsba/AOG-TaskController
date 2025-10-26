@@ -49,6 +49,8 @@ FetchContent_MakeAvailable(git_version)
 find_package(Threads REQUIRED)
 
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
+# Exclude the example file from the build
+list(FILTER SRC_FILES EXCLUDE REGEX "footer_example.cpp")
 add_executable(${PROJECT_NAME} ${SRC_FILES} resources/AppIcon.rc)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
