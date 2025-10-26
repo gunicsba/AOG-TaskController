@@ -639,11 +639,13 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
 			std::int32_t reportedSequence = processDataValue;
 			std::uint32_t currentSequence = clients[partner].get_tramline_sequence_number();
 			
-			// Workaround for AgIsoStack++ signed/unsigned conversion issue
-			// The library incorrectly adds 2147483648 to our values, so we subtract it to get the real value
+			// Handle the signed/unsigned conversion issue
+			// When we send uint32_t values > INT32_MAX, they appear as negative int32_t values
+			// Convert back to the proper unsigned value
 			if (reportedSequence < 0)
 			{
-				reportedSequence = reportedSequence + 2147483648;
+				// Convert negative int32_t back to uint32_t by adding 2^31
+				reportedSequence = reportedSequence & 0x7FFFFFFF;
 				std::cout << "Implement reported Tramline Sequence Number (DDI 507): " << processDataValue << " (conversion issue, using: " << reportedSequence << ")" << std::endl;
 			}
 			else
@@ -666,11 +668,13 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
 			std::int32_t reportedID = processDataValue;
 			std::uint32_t currentID = clients[partner].get_unique_ab_reference_id();
 			
-			// Workaround for AgIsoStack++ signed/unsigned conversion issue
-			// The library incorrectly adds 2147483648 to our values, so we subtract it to get the real value
+			// Handle the signed/unsigned conversion issue
+			// When we send uint32_t values > INT32_MAX, they appear as negative int32_t values
+			// Convert back to the proper unsigned value
 			if (reportedID < 0)
 			{
-				reportedID = reportedID + 2147483648;
+				// Convert negative int32_t back to uint32_t by adding 2^31
+				reportedID = reportedID & 0x7FFFFFFF;
 				std::cout << "Implement reported Unique A-B Guidance Reference Line ID (DDI 508): " << processDataValue << " (conversion issue, using: " << reportedID << ")" << std::endl;
 			}
 			else
@@ -1053,13 +1057,19 @@ void MyTCServer::handle_tramline_sequence(std::shared_ptr<isobus::ControlFunctio
 	std::cout << "  Track to Left: " << trackToLeft << std::endl;
 	std::cout << "  Track to Right: " << trackToRight << std::endl;
 
-	// Send Tramline Sequence Number (DDI 507)
+	// According to specification, tramline parameters must be sent as a group
+	// and in a specific order to ensure validity:
+	// 1. DDI 507 (Tramline Sequence Number) - first
+	// 2. DDI 508 (Unique A-B Guidance Reference Line ID) - immediately after DDI 507
+	// 3. Other parameters (509, 510, 511, 669) - after DDI 508
+
+	// Send Tramline Sequence Number (DDI 507) - MUST be first
 	std::uint16_t elem507 = 0;
 	if (state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::TramlineSequenceNumber, elem507))
 	{
-		// Send the value directly as uint32_t without compensation
-		// Let AgIsoStack++ handle any necessary conversions internally
-		std::int32_t valueToSend = static_cast<std::int32_t>(sequenceNumber);
+		// For Tramline Sequence Number (DDI 507), use uint32_t as per specification (0 to 2147483647)
+		// Send as uint32_t directly without casting to int32_t to avoid conversion issues
+		std::int32_t valueToSend = static_cast<std::int32_t>(sequenceNumber & 0x7FFFFFFF);
 		send_set_value(client, static_cast<std::uint16_t>(isobus::DataDescriptionIndex::TramlineSequenceNumber), elem507, valueToSend);
 		std::cout << "Sent Tramline Sequence Number (DDI 507): " << sequenceNumber << " (raw: " << valueToSend << ")" << std::endl;
 	}
@@ -1068,13 +1078,13 @@ void MyTCServer::handle_tramline_sequence(std::shared_ptr<isobus::ControlFunctio
 		std::cout << "DDI 507 element not found in DDOP; unable to send Tramline Sequence Number." << std::endl;
 	}
 
-	// Send Unique A-B Guidance Reference Line ID (DDI 508)
+	// Send Unique A-B Guidance Reference Line ID (DDI 508) - MUST be immediately after DDI 507
 	std::uint16_t elem508 = 0;
 	if (state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::UniqueABGuidanceReferenceLineID, elem508))
 	{
-		// Send the value directly as uint32_t without compensation
-		// Let AgIsoStack++ handle any necessary conversions internally
-		std::int32_t valueToSend = static_cast<std::int32_t>(uniqueABReferenceID);
+		// For Unique A-B Guidance Reference Line ID (DDI 508), use uint32_t as per specification (0 to 2147483647)
+		// Send as uint32_t directly without casting to int32_t to avoid conversion issues
+		std::int32_t valueToSend = static_cast<std::int32_t>(uniqueABReferenceID & 0x7FFFFFFF);
 		send_set_value(client, static_cast<std::uint16_t>(isobus::DataDescriptionIndex::UniqueABGuidanceReferenceLineID), elem508, valueToSend);
 		std::cout << "Sent Unique A-B Guidance Reference Line ID (DDI 508): " << uniqueABReferenceID << " (raw: " << valueToSend << ")" << std::endl;
 	}
@@ -1083,23 +1093,25 @@ void MyTCServer::handle_tramline_sequence(std::shared_ptr<isobus::ControlFunctio
 		std::cout << "DDI 508 element not found in DDOP; unable to send Unique A-B Guidance Reference Line ID." << std::endl;
 	}
 
-	// Send Track Number Shift (DDI 669) when Unique A-B Guidance Reference Line ID changes
-	std::uint16_t elem669 = 0;
-	if (state.try_get_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(DDI_TRACK_NUMBER_SHIFT), elem669))
+	// Send Actual Track Number (DDI 509)
+	std::uint16_t elem509 = 0;
+	if (state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::ActualTrackNumber, elem509))
 	{
-		std::int32_t trackNumberShift = state.get_track_number_shift();
-		send_set_value(client, DDI_TRACK_NUMBER_SHIFT, elem669, trackNumberShift);
-		std::cout << "Sent Track Number Shift (DDI 669): " << trackNumberShift << std::endl;
+		// For Actual Track Number (DDI 509), use int32_t as per specification (-2147483648 to 2147483647)
+		std::int32_t valueToSend = static_cast<std::int32_t>(currentTrack);
+		send_set_value(client, static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualTrackNumber), elem509, valueToSend);
+		std::cout << "Sent Actual Track Number (DDI 509): " << valueToSend << std::endl;
 	}
 	else
 	{
-		std::cout << "DDI 669 element not found in DDOP; unable to send Track Number Shift." << std::endl;
+		std::cout << "DDI 509 element not found in DDOP; unable to send Actual Track Number." << std::endl;
 	}
 
 	// Send Track Number to the Right (DDI 510)
 	std::uint16_t elem510 = 0;
 	if (state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::TrackNumberToTheRight, elem510))
 	{
+		// For Track Number to the Right (DDI 510), use int32_t as per specification (-2147483648 to 2147483647)
 		send_set_value(client, static_cast<std::uint16_t>(isobus::DataDescriptionIndex::TrackNumberToTheRight), elem510, trackToRight);
 		std::cout << "Sent Track Number to the Right (DDI 510): " << trackToRight << std::endl;
 	}
@@ -1112,6 +1124,7 @@ void MyTCServer::handle_tramline_sequence(std::shared_ptr<isobus::ControlFunctio
 	std::uint16_t elem511 = 0;
 	if (state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::TrackNumberToTheLeft, elem511))
 	{
+		// For Track Number to the Left (DDI 511), use int32_t as per specification (-2147483648 to 2147483647)
 		send_set_value(client, static_cast<std::uint16_t>(isobus::DataDescriptionIndex::TrackNumberToTheLeft), elem511, trackToLeft);
 		std::cout << "Sent Track Number to the Left (DDI 511): " << trackToLeft << std::endl;
 	}
@@ -1120,18 +1133,20 @@ void MyTCServer::handle_tramline_sequence(std::shared_ptr<isobus::ControlFunctio
 		std::cout << "DDI 511 element not found in DDOP; unable to send Track Number to the Left." << std::endl;
 	}
 
-	// Send Actual Track Number (DDI 509)
-	std::uint16_t elem509 = 0;
-	if (state.try_get_element_number_for_ddi(isobus::DataDescriptionIndex::ActualTrackNumber, elem509))
+	// Send Track Number Shift (DDI 669) - should be sent after the other parameters as per specification
+	std::uint16_t elem669 = 0;
+	if (state.try_get_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(DDI_TRACK_NUMBER_SHIFT), elem669))
 	{
-			std::int32_t valueToSend = static_cast<std::int32_t>(currentTrack);
-			send_set_value(client, static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualTrackNumber), elem509, valueToSend);
-			std::cout << "Sent Actual Track Number (DDI 509): " << valueToSend << std::endl;
+		// For Track Number Shift (DDI 669), use int32_t as per specification (-2147483648 to 2147483647)
+		std::int32_t trackNumberShift = state.get_track_number_shift();
+		send_set_value(client, DDI_TRACK_NUMBER_SHIFT, elem669, trackNumberShift);
+		std::cout << "Sent Track Number Shift (DDI 669): " << trackNumberShift << std::endl;
 	}
 	else
 	{
-		std::cout << "DDI 509 element not found in DDOP; unable to send Actual Track Number." << std::endl;
+		std::cout << "DDI 669 element not found in DDOP; unable to send Track Number Shift." << std::endl;
 	}
+
 }
 
 void MyTCServer::send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset)

@@ -80,6 +80,11 @@ public:
 	std::uint16_t get_track_number() const;
 
 	// Tramline sequence information
+	// According to ISOBUS specification, tramline parameters must be sent as a group in a specific order:
+	// 1. DDI 507 (Tramline Sequence Number) - first
+	// 2. DDI 508 (Unique A-B Guidance Reference Line ID) - immediately after DDI 507
+	// 3. Other parameters (DDI 509, 510, 511, 669) - after DDI 508
+	// All values belonging to one Tramline Sequence must be sent within 500 milliseconds of each other.
 	void set_tramline_sequence_number(std::uint32_t sequence);
 	std::uint32_t get_tramline_sequence_number() const;
 	void set_unique_ab_reference_id(std::uint32_t id);
