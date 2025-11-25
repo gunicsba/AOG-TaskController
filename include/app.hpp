@@ -13,6 +13,7 @@
 
 #include "isobus/hardware_integration/can_hardware_plugin.hpp"
 #include "isobus/isobus/isobus_speed_distance_messages.hpp"
+#include "isobus/isobus/isobus_task_controller_client.hpp"
 #include "isobus/isobus/nmea2000_message_interface.hpp"
 
 #include "settings.hpp"
@@ -35,6 +36,8 @@ private:
 
 	std::shared_ptr<isobus::CANHardwarePlugin> canDriver;
 	std::shared_ptr<MyTCServer> tcServer;
+	std::shared_ptr<isobus::InternalControlFunction> tcControlFunction;
+	std::shared_ptr<isobus::InternalControlFunction> tecuControlFunction;
 	std::unique_ptr<isobus::SpeedMessagesInterface> speedMessagesInterface;
 	std::unique_ptr<isobus::NMEA2000MessageInterface> nmea2000MessageInterface;
 	std::uint8_t nmea2000SequenceIdentifier = 0;
