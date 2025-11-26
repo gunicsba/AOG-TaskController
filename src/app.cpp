@@ -14,8 +14,15 @@
 #include "isobus/isobus/isobus_preferred_addresses.hpp"
 #include "isobus/isobus/isobus_standard_data_description_indices.hpp"
 #include "isobus/utility/system_timing.hpp"
+#include "isobus/utility/iop_file_interface.hpp"
 
 #include "task_controller.hpp"
+#include "AOG_TC.iop.h"
+
+#include <iostream>
+#include <memory>
+#include <thread>
+#include <future>
 
 using boost::asio::ip::udp;
 
@@ -54,20 +61,25 @@ bool Application::initialize()
 	ourNAME.set_device_class_instance(0);
 	ourNAME.set_manufacturer_code(1407);
 
-	// Create separate NAME objects for Task Controller and Tractor ECU
+	// Create separate NAME objects for Task Controller, Tractor ECU, and Virtual Terminal
 	isobus::NAME tcNAME = ourNAME; // Copy the base configuration
 	tcNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::TaskController));
 	
 	isobus::NAME tecuNAME = ourNAME; // Copy the base configuration
 	tecuNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::TractorECU));
+	
+	isobus::NAME vtNAME = ourNAME; // Copy the base configuration
+	vtNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::VirtualTerminal));
 
-	// Create separate control functions for Task Controller and Tractor ECU
+	// Create separate control functions for Task Controller, Tractor ECU, and Virtual Terminal
 	// Task Controller will use address 0x26 (38) as required
 	// Tractor ECU will use a different address to avoid conflicts
-	auto tcCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tcNAME, 0, isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer); // Task Controller address
+	// Virtual Terminal will use its preferred address
+	auto tcCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tcNAME, 0, 0x26); // Task Controller address
 	auto tecuCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU); // TECU preferred address
+	auto vtCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(vtNAME, 0); // VT with no specific address
 	
-	// Wait for both address claiming processes to complete
+	// Wait for all address claiming processes to complete
 	auto tcAddressClaimedFuture = std::async(std::launch::async, [&tcCF]() {
 		// Wait up to 10 seconds for address validation
 		auto startTime = std::chrono::steady_clock::now();
@@ -76,11 +88,20 @@ bool Application::initialize()
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	});
-
+	
 	auto tecuAddressClaimedFuture = std::async(std::launch::async, [&tecuCF]() {
 		// Wait up to 10 seconds for address validation
 		auto startTime = std::chrono::steady_clock::now();
 		while (!tecuCF->get_address_valid() && 
+		       (std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	});
+	
+	auto vtAddressClaimedFuture = std::async(std::launch::async, [&vtCF]() {
+		// Wait up to 10 seconds for address validation
+		auto startTime = std::chrono::steady_clock::now();
+		while (!vtCF->get_address_valid() && 
 		       (std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
@@ -90,21 +111,25 @@ bool Application::initialize()
 	if (tcAddressClaimedFuture.wait_for(std::chrono::seconds(10)) == std::future_status::timeout) {
 		std::cout << "Warning: Task Controller address claiming timed out. The control function may not have claimed the desired address." << std::endl;
 	}
-
+	
 	if (tecuAddressClaimedFuture.wait_for(std::chrono::seconds(10)) == std::future_status::timeout) {
 		std::cout << "Warning: Tractor ECU address claiming timed out. The control function may not have claimed the desired address." << std::endl;
 	}
-
+	
+	if (vtAddressClaimedFuture.wait_for(std::chrono::seconds(10)) == std::future_status::timeout) {
+		std::cout << "Warning: Virtual Terminal address claiming timed out. The control function may not have claimed the desired address." << std::endl;
+	}
+	
 	// Check what addresses were actually claimed for Task Controller
 	if (tcCF->get_address_valid()) {
 		std::cout << "Task Controller control function successfully claimed address: " << static_cast<int>(tcCF->get_address()) << " (0x" 
 		          << std::hex << static_cast<int>(tcCF->get_address()) << std::dec << ")" << std::endl;
 		
 		// If the address is not what we wanted, log a warning
-		if (tcCF->get_address() != isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer) {
+		if (tcCF->get_address() != 0x26) {
 			std::cout << "Warning: Task Controller control function claimed address " << static_cast<int>(tcCF->get_address()) 
-			          << " instead of the requested address " << isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer << std::endl;
-			std::cout << "This may cause communication issues with implements expecting messages from address." << std::endl;
+			          << " instead of the requested address 38 (0x26)" << std::endl;
+			std::cout << "This may cause communication issues with implements expecting messages from address 38." << std::endl;
 		}
 	} else {
 		std::cout << "Warning: Task Controller control function address is not valid. This may cause communication issues." << std::endl;
@@ -117,17 +142,109 @@ bool Application::initialize()
 	} else {
 		std::cout << "Warning: Tractor ECU control function address is not valid. This may cause communication issues." << std::endl;
 	}
+	
+	// Check what addresses were actually claimed for Virtual Terminal
+	if (vtCF->get_address_valid()) {
+		std::cout << "Virtual Terminal control function successfully claimed address: " << static_cast<int>(vtCF->get_address()) << " (0x" 
+		          << std::hex << static_cast<int>(vtCF->get_address()) << std::dec << ")" << std::endl;
+	} else {
+		std::cout << "Warning: Virtual Terminal control function address is not valid. This may cause communication issues." << std::endl;
+	}
 
-	// If either fails, probably the update thread is not started
-	if (!tcCF->get_address_valid() ) //  || !tecuCF->get_address_valid())
+	// If any critical function fails, probably the update thread is not started
+	if (!tcCF->get_address_valid() || !tecuCF->get_address_valid())
 	{
-		std::cout << "Failed to claim address for one or more control functions. The control function(s) might be invalid." << std::endl;
+		std::cout << "Failed to claim address for one or more critical control functions. The control function(s) might be invalid." << std::endl;
 		return false;
 	}
 
 	// Store the control functions in member variables
 	tcControlFunction = tcCF;
 	tecuControlFunction = tecuCF;
+	vtControlFunction = vtCF;
+
+	// Initialize Virtual Terminal Client if the header exists
+	// Note: This is conditional because we're not sure if the VT client is available in this version of AgIsoStack++
+	#ifdef ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE
+	try {
+		// Create a partnered control function to represent the VT server we want to connect to
+		const isobus::NAMEFilter filterVirtualTerminal(
+			isobus::NAME::NAMEParameters::FunctionCode, 
+			static_cast<std::uint8_t>(isobus::NAME::Function::VirtualTerminal));
+		const std::vector<isobus::NAMEFilter> vtNameFilters = { filterVirtualTerminal };
+		auto partnerVT = isobus::CANNetworkManager::CANNetwork.create_partnered_control_function(0, vtNameFilters);
+
+		// Create VT client
+		vtClient = std::make_shared<isobus::VirtualTerminalClient>(partnerVT, vtCF);
+		
+		// Try to load object pool from different possible locations
+		std::vector<std::string> possiblePaths = {
+			"AOG_TC.iop",           // Current directory
+			"src/AOG_TC.iop",       // src folder
+			"../src/AOG_TC.iop",    // Relative path to src folder
+			"./src/AOG_TC.iop"      // Alternative relative path
+		};
+		
+		bool objectPoolLoaded = false;
+		for (const auto& path : possiblePaths) {
+			std::cout << "Trying to load object pool from: " << path << std::endl;
+			objectPool = isobus::IOPFileInterface::read_iop_file(path);
+			if (!objectPool.empty()) {
+				std::string objectPoolHash = isobus::IOPFileInterface::hash_object_pool_to_version(objectPool);
+				vtClient->set_object_pool(0, objectPool.data(), objectPool.size(), objectPoolHash);
+				std::cout << "Successfully loaded object pool from " << path << " with " << objectPool.size() << " bytes" << std::endl;
+				objectPoolLoaded = true;
+				break;
+			} else {
+				std::cout << "Failed to load object pool from: " << path << std::endl;
+			}
+		}
+		
+		if (!objectPoolLoaded) {
+			std::cout << "Warning: Failed to load object pool from any of the expected locations:" << std::endl;
+			for (const auto& path : possiblePaths) {
+				std::cout << "  - " << path << std::endl;
+			}
+			std::cout << "The VT client will initialize without an object pool." << std::endl;
+		}
+		
+		// Handle soft key events
+		vtClient->get_vt_soft_key_event_dispatcher().add_listener(
+			[this](const isobus::VirtualTerminalClient::VTKeyEvent &event) {
+				// Handle your soft key presses
+				std::cout << "VT Soft Key Event: Key Number " << static_cast<int>(event.keyNumber) 
+				          << ", Key Event " << static_cast<int>(event.keyEvent) 
+				          << ", Object ID " << event.objectID << std::endl;
+				handle_vt_key_events(event);
+			});
+
+		// Handle button events
+		vtClient->get_vt_button_event_dispatcher().add_listener(
+			[this](const isobus::VirtualTerminalClient::VTKeyEvent &event) {
+				// Handle your button presses
+				std::cout << "VT Button Event: Key Number " << static_cast<int>(event.keyNumber) 
+				          << ", Key Event " << static_cast<int>(event.keyEvent) 
+				          << ", Object ID " << event.objectID << std::endl;
+				handle_vt_key_events(event);
+			});
+
+		// Handle numeric value events
+		vtClient->get_vt_change_numeric_value_event_dispatcher().add_listener(
+			[this](const isobus::VirtualTerminalClient::VTChangeNumericValueEvent &event) {
+				std::cout << "VT Numeric Value Event: Object ID " << event.objectID
+				          << ", Value " << event.value << std::endl;
+				handle_numeric_value_events(event);
+			});
+
+		// Initialize and start
+		vtClient->initialize(true); // true = spawns own thread
+		std::cout << "Virtual Terminal Client initialized successfully." << std::endl;
+	}
+	catch (const std::exception& e) {
+		std::cout << "Failed to initialize Virtual Terminal Client: " << e.what() << std::endl;
+		vtClient.reset();
+	}
+	#endif // ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE
 
 	// Use the Task Controller control function for the server (as it needs to send TC messages)
 	tcServer = std::make_shared<MyTCServer>(tcCF);
@@ -159,14 +276,19 @@ bool Application::initialize()
 		{
 			// TODO: hack to get desired section states. probably want to make a new pgn later when we need more than 16 sections
 			std::vector<bool> sectionStates;
+			std::string ss = "";
 			for (std::uint8_t i = 0; i < 8; i++)
 			{
 				sectionStates.push_back(data[6] & (1 << i));
+				ss += std::to_string((data[6] & (1 << i))!=0);
 			}
 			for (std::uint8_t i = 0; i < 8; i++)
 			{
 				sectionStates.push_back(data[7] & (1 << i));
+				ss += std::to_string((data[7] & (1 << i))!=0);
 			}
+			if(vtClient)
+				vtClient->send_change_string_value(VTSectionsFromAOGS, 16, ss.c_str());
 
 			tcServer->update_section_states(sectionStates);
 		}
@@ -218,7 +340,13 @@ bool Application::initialize()
 				speedMessagesInterface->groundBasedSpeedTransmitData.set_machine_distance(0); // TODO: Implement distance
 				speedMessagesInterface->wheelBasedSpeedTransmitData.set_machine_distance(0); // TODO: Implement distance
 				speedMessagesInterface->machineSelectedSpeedTransmitData.set_machine_distance(0); // TODO: Implement distance
-
+				if (vtClient) {
+					vtClient->send_change_numeric_value(VTSpeedValue, speed);
+					if(speed > 100) 
+						vtClient->send_change_string_value(VTWorkingSetStatusStr, 2, "OK");
+					else 
+						vtClient->send_change_string_value(VTWorkingSetStatusStr, 3, "LOW");
+				}
 				auto &cog_sog_message = nmea2000MessageInterface->get_cog_sog_transmit_message();
 				cog_sog_message.set_sequence_id(nmea2000SequenceIdentifier++);
 				cog_sog_message.set_speed_over_ground(speed/10);
@@ -227,6 +355,9 @@ bool Application::initialize()
 			}
 			else if (identifier == isobus::DataDescriptionIndex::GuidanceLineDeviation)
 			{
+				if (vtClient) {
+					vtClient->send_change_numeric_value(VTXteValue, value);
+				}
 				std::int32_t xte = value / 1000; // Convert from mm to m
 				static const std::uint8_t xteMode = 0b00000001;
 				xteSid = xteSid % 253 + 1;
@@ -279,6 +410,14 @@ bool Application::update()
 	tcServer->update();
 	speedMessagesInterface->update();
 	nmea2000MessageInterface->update();
+	
+	#ifdef ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE
+	if (vtClient) {
+		// Update the VT client
+		// Note: The VT client runs in its own thread, so this is just for any additional logic
+		// You might want to update numeric values, strings, etc. based on your application state
+	}
+	#endif // ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE
 
 	if (isobus::SystemTiming::time_expired_ms(lastHeartbeatTransmit, 100))
 	{
@@ -311,6 +450,73 @@ bool Application::update()
 
 void Application::stop()
 {
+	// Clean up VT client if it exists
+	#ifdef ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE
+	if (vtClient) {
+		vtClient->terminate();
+		vtClient.reset();
+	}
+	#endif // ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE
+	
 	tcServer->terminate();
 	isobus::CANHardwareInterface::stop();
 }
+
+#ifdef ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE
+void Application::set_output_number_value(std::uint16_t objectID, std::uint32_t value)
+{
+	// Change a numeric output object in the Virtual Terminal
+	if (vtClient) {
+		vtClient->send_change_numeric_value(objectID, value);
+		std::cout << "Set OutputNumber object " << objectID << " to value " << value << std::endl;
+	} else {
+		std::cout << "Virtual Terminal Client is not initialized" << std::endl;
+	}
+}
+
+void Application::handle_vt_key_events(const isobus::VirtualTerminalClient::VTKeyEvent &event)
+{
+	// Handle VT key events
+	// This is where you would implement your UI logic
+	std::cout << "Handling VT key event: Key Number " << static_cast<int>(event.keyNumber) 
+	          << ", Key Event " << static_cast<int>(event.keyEvent) 
+	          << ", Object ID " << event.objectID << std::endl;
+	
+	// Example implementation - you would replace this with your actual UI logic
+	switch (event.keyNumber)
+	{
+		case 0: // Example: ACK key
+			if (event.keyEvent == isobus::VirtualTerminalClient::KeyActivationCode::ButtonUnlatchedOrReleased)
+			{
+				std::cout << "ACK key pressed" << std::endl;
+				// Handle ACK functionality
+			}
+			break;
+			
+		default:
+			std::cout << "Unhandled key event for key number: " << static_cast<int>(event.keyNumber) << std::endl;
+			break;
+	}
+}
+
+void Application::handle_numeric_value_events(const isobus::VirtualTerminalClient::VTChangeNumericValueEvent &event)
+{
+	// Handle VT numeric value events
+	// This is where you would implement your UI logic for numeric inputs
+	std::cout << "Handling VT numeric value event: Object ID " << event.objectID 
+	          << ", Value " << event.value << std::endl;
+	
+	// Example implementation - you would replace this with your actual UI logic
+	switch (event.objectID)
+	{
+		case 1000: // Example object ID for a setting
+			std::cout << "Setting value changed to: " << event.value << std::endl;
+			// Handle the changed value
+			break;
+			
+		default:
+			std::cout << "Unhandled numeric value event for object ID: " << event.objectID << std::endl;
+			break;
+	}
+}
+#endif // ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE

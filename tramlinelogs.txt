@@ -1,581 +1,911 @@
-C:\Program Files\AOG-TaskController\bin\AOG-TaskController.exe --can_adapter=peak-pcan --can_channel=1 --log_level=debug
-AOG-TC version: v77a3047-dirty
-[Debug][NM]: A control function claimed address 170 on channel 0
-[Debug][NM]: A control function claimed address 150 on channel 0
-[Debug][NM]: A control function claimed address 204 on channel 0
-[Debug][NM]: A control function claimed address 200 on channel 0
-[Debug][NM]: A control function claimed address 119 on channel 0
-[Debug][NM]: A control function claimed address 149 on channel 0
-[Debug][NM]: A control function claimed address 252 on channel 0
-[Debug][NM]: A control function claimed address 128 on channel 0
-[Debug][NM]: A control function claimed address 176 on channel 0
-[Debug][NM]: A control function claimed address 28 on channel 0
-[Debug][NM]: A control function claimed address 201 on channel 0
-[Debug][NM]: A control function claimed address 202 on channel 0
-[Debug][AC]: Internal control function a0008200afe00014 has claimed address 247 on channel 0
+AOG-TaskController.exe --can_adapter=peak-pcan --can_channel=2 --log_level=debug --log2file 
+AOG-TC version: v9ecb089-dirty
+[Debug][NM]: A control function claimed address 38 on channel 0
+[Debug][NM]: A control function claimed address 129 on channel 0
+[Debug][AC]: Internal control function a0008200afe00014 could not use the preferred address, but has arbitrarily claimed address 128 on channel 0
+Control function successfully claimed address: 128 (0x80)
 Task controller server started.
 Available IP addresses:
-- fe80::b32:f8e5:9ff7:dff3%60
-- 192.168.1.242
-Found local endpoint address 192.168.1.242, which matches the subnet 192.168.1.0
+- fe80::f107:3a00:2cad:9051%28
+- 192.168.56.1
+- 192.168.1.241
+Found local endpoint address 192.168.1.241, which matches the subnet 192.168.1.0
 UDP connections opened.
-AOG tramline change detected: left=ON, right=ON
 [Debug][TC Server]: Client reports that its version is 3
-[Debug][VT/TC]: Language and unit data received from control function 170 language is: hu
-[Debug][VT/TC]: Language and unit data received from control function 201 language is: hu
-[Info][TC Server]:Client 204 structure label(s) did not match. Sending 0xFFs as the structure label.
-[Info][TC Server]: Client 204 requests object pool transfer of 2677 bytes
-[Debug][ETP]: New rx session for 0x0CB00. Source: 204, destination: 247
-[Debug][ETP]: Session Closed
-[Debug][ETP]: Completed rx session for 0x0CB00 from 204
-[Info][TC Server]: Stored DDOP segment for client 204
-[Info][TC Server]: Client 204 requests activation of object pool
-[Debug][DDOP]: Attempting to deserialize a binary object pool with size 2677.
+[Info][TC Server]:Client 129 structure label(s) did not match. Sending 0xFFs as the structure label.
+[Info][TC Server]: Client 129 requests object pool transfer of 62 bytes
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Stored DDOP segment for client 129
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Client 129 requests object pool transfer of 474 bytes
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Stored DDOP segment for client 129
+[Info][TC Server]: Client 129 requests object pool transfer of 89 bytes
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Stored DDOP segment for client 129
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Client 129 requests object pool transfer of 193 bytes
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Stored DDOP segment for client 129
+[Info][TC Server]: Client 129 requests activation of object pool
+[Debug][DDOP]: Attempting to deserialize a binary object pool with size 62.
+[Debug][DDOP]: Attempting to deserialize a binary object pool with size 474.
+[Debug][DDOP]: Attempting to deserialize a binary object pool with size 89.
+[Debug][DDOP]: Attempting to deserialize a binary object pool with size 193.
 Successfully deserialized device descriptor object pool.
-Saving DDOP to: C:\Users\Balazs\AppData\Roaming\AOG-TaskController\11603670443562939010\hu.ddop
-Implement geometry:
-Number of booms=1
-Boom: id=2
-Section: id=8
+Saving DDOP to: C:\Users\Balazs\AppData\Roaming\AOG-TaskController\11531607583558498465\en.ddop
+Implement geometry: 
+Number of booms=2
+Boom: id=3
+Section: id=5
 X Offset: 0
 Y Offset: 0
 Z Offset: 0
 Width: 0
-Section: id=9
-X Offset: 0
-Y Offset: 0
-Z Offset: 0
-Width: 0
-[Info][TC Server]: Object pool activated for client 204
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Actual Work State element 0 with threshold 1
-[Debug][TC Server]: Requesting time interval measurement from client 204 for DDI Actual Work State element 0 with time interval 1000 ms
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Actual Work State element 2 with threshold 1
-[Debug][TC Server]: Requesting time interval measurement from client 204 for DDI Actual Work State element 2 with time interval 1000 ms
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Actual Work State element 8 with threshold 1
-[Debug][TC Server]: Requesting time interval measurement from client 204 for DDI Actual Work State element 8 with time interval 1000 ms
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Actual Condensed Work State (1-16) element 2 with threshold 1
-[Debug][TC Server]: Requesting time interval measurement from client 204 for DDI Actual Condensed Work State (1-16) element 2 with time interval 1000 ms
-Mapped DDI 505 (Tramline Control Level) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Tramline Control Level element 0 with threshold 1
-Subscribed (OnChange) to DDI 505 (Tramline Control Level) for element 0
-[Debug][TC Server]: Requesting time interval measurement from client 204 for DDI Tramline Control Level element 0 with time interval 5000 ms
-Requested Tramline Control Level (DDI 505) from element 0
-Mapped DDI 506 (Setpoint Tramline Control Level) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Setpoint Tramline Control Level element 0 with threshold 1
-Subscribed (OnChange) to DDI 506 (Setpoint Tramline Control Level) for element 0
-Mapped DDI 515 (Tramline Control State) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Tramline Control State element 0 with threshold 1
-Subscribed (OnChange) to DDI 515 (Tramline Control State) for element 0
-Mapped DDI 507 (Tramline Sequence Number) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Tramline Sequence Number element 0 with threshold 1
-Subscribed (OnChange) to DDI 507 (Tramline Sequence Number) for element 0
-Mapped DDI 508 (Unique A-B Guidance Reference Line ID) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with threshold 1
-Subscribed (OnChange) to DDI 508 (Unique A-B Guidance Reference Line ID) for element 0
-Mapped DDI 509 (Actual Track Number) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Actual Track Number element 0 with threshold 1
-Subscribed (OnChange) to DDI 509 (Actual Track Number) for element 0
-Mapped DDI 510 (Track Number to the right) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Track Number to the right element 0 with threshold 1
-Subscribed (OnChange) to DDI 510 (Track Number to the right) for element 0
-Mapped DDI 511 (Track Number to the left) to element 0
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Track Number to the left element 0 with threshold 1
-Subscribed (OnChange) to DDI 511 (Track Number to the left) for element 0
-Mapped DDI 160 (Section Control State) to element 2
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Section Control State element 2 with threshold 1
-Subscribed (OnChange) to DDI 160 (Section Control State) for element 2
-Mapped DDI 290 (Setpoint Condensed Work State (1-16)) to element 2
-[Debug][TC Server]: Requesting change threshold measurement from client 204 for DDI Setpoint Condensed Work State (1-16) element 2 with threshold 1
-Subscribed (OnChange) to DDI 290 (Setpoint Condensed Work State (1-16)) for element 2
+Boom: id=4
+[Info][TC Server]: Object pool activated for client 129
+[Debug][TC Server]: Requesting change threshold measurement from client 129 for DDI Actual Work State element 0 with threshold 1
+[Debug][TC Server]: Requesting time interval measurement from client 129 for DDI Actual Work State element 0 with time interval 1000 ms
+[Debug][TC Server]: Requesting change threshold measurement from client 129 for DDI Actual Work State element 3 with threshold 1
+[Debug][TC Server]: Requesting time interval measurement from client 129 for DDI Actual Work State element 3 with time interval 1000 ms
+[Debug][TC Server]: Requesting change threshold measurement from client 129 for DDI Actual Work State element 4 with threshold 1
+[Debug][TC Server]: Requesting time interval measurement from client 129 for DDI Actual Work State element 4 with time interval 1000 ms
+[Debug][TC Server]: Requesting change threshold measurement from client 129 for DDI Actual Condensed Work State (1-16) element 3 with threshold 1
+[Debug][TC Server]: Requesting time interval measurement from client 129 for DDI Actual Condensed Work State (1-16) element 3 with time interval 1000 ms
+Mapped DDI 160 (Section Control State) to element 3
+[Debug][TC Server]: Requesting change threshold measurement from client 129 for DDI Section Control State element 3 with threshold 1
+Subscribed (OnChange) to DDI 160 (Section Control State) for element 3
+Mapped DDI 290 (Setpoint Condensed Work State (1-16)) to element 3
 Measurement commands sent.
-Received process data acknowledge from client 204 for DDI 141 (Actual Work State) element 8 with error codes 00000100 and command 13
-Received process data acknowledge from client 204 for DDI 141 (Actual Work State) element 8 with error codes 00000100 and command 13
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 505 (Tramline Control Level), element 0, value 3 (Reserved)
-Implement Tramline Control Level support: L1=Yes, L2=Yes, L3=No Selected Tramline Control Level: 1
-[Debug][TC Server]: Sending set value to client 204 for DDI Setpoint Tramline Control Level element 0 with value Level 2
-Setpoint Tramline Control Level (DDI 506) sent: 1 (element 0) -----------
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Control Level with value Reserved OK.
-PD value from client 204: DDI 506 (Setpoint Tramline Control Level), element 0, value 1 (Level 2)
-Implement reported Setpoint Tramline Control Level (DDI 506): 1
-Tramline control level negotiation confirmed by implement.
-[Debug][TC Server]: Client 204 value command for element 0 DDI Setpoint Tramline Control Level with value Level 2 OK.
-PD value from client 204: DDI 515 (Tramline Control State), element 0, value 1 (On)
-Implement Tramline Control State: automatic/on
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Control State with value On OK.
-PD value from client 204: DDI 507 (Tramline Sequence Number), element 0, value 0 (2147483648)
-Implement reported Tramline Sequence Number (DDI 507): 0
-Tramline sequence number updated by implement: 1 -> 0
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Sequence Number with value 2147483648 OK.
-PD value from client 204: DDI 508 (Unique A-B Guidance Reference Line ID), element 0, value 0 (2147483648)
-Implement reported Unique A-B Guidance Reference Line ID (DDI 508): 0
-Unique A-B Guidance Reference Line ID updated by implement: 1 -> 0
-[Debug][TC Server]: Client 204 value command for element 0 DDI Unique A-B Guidance Reference Line ID with value 2147483648 OK.
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 58 (58)
-Implement reported Actual Track Number (DDI 509): 58
-Actual track number updated by implement: 1 -> 58
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 58 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 59 (59)
-Implement reported Track Number to the Right (DDI 510): 59
-Track number to the right updated by implement: 2 -> 59
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 59 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 57 (57)
-Implement reported Track Number to the Left (DDI 511): 57
-Track number to the left updated by implement: 0 -> 57
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 57 OK.
-PD value from client 204: DDI 160 (Section Control State), element 2, value 1 (On)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Section Control State with value On OK.
-PD value from client 204: DDI 290 (Setpoint Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Setpoint Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-[Warn][PR]: Received a malformed or broadcast request for repetition rate message. The message will not be processed.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 160 (Section Control State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Section Control State with value Off OK.
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 0
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 21
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 22
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 23
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 24
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 25
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 34
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 35
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 37
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+P[DebD value from client u129: DDI 141 (Actual Work State), g]element [4, value TP]: Rec0e (Off)
+ived Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 38
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 41
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 42
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 43
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Info][TC Server]: Changed designator for client 129. Object ID: 44
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 45
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 54
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 55
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 56
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 59
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 60
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 58
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 46
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 47
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 66
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 50
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 51
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+[Element 3 work state is OFF, forcing sections to OFF
+DElement 0 work state is OFebug][TP]: RF, forcing sections to OFF
+eceived Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 52
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 77
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 67
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 62
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 64
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 87
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 98
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 100
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 49
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 1
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 9
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 5
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 3
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 4
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Info][TC Server]: Changed designator for client 129. Object ID: 7
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Debug][TP]: Received Request To Send (RTS) with a CTS packet count of 255, which is greater than the configured maximum of 16, using the configured maximum instead.
+[Debug][TP]: New rx session for 0x0CB00. Source: 129, destination: 128
+[Debug][TP]: Session Closed
+[Debug][TP]: Completed rx session for 0x0CB00 from 129
+[Info][TC Server]: Changed designator for client 129. Object ID: 8
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 505 (Tramline Control Level), element 0, value 3 (Reserved)
-Implement Tramline Control Level support: L1=Yes, L2=Yes, L3=No Selected Tramline Control Level: 1
-Tramline control level unchanged; skipping DDI 506 send.
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Control Level with value Reserved OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 1
-  Unique A-B Reference ID: 1
-  Current Track: 59
-  Track to Left: 58
-  Track to Right: 60
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 1
-Sent Tramline Sequence Number (DDI 507): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 60
-Sent Track Number to the Right (DDI 510): 60
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 58
-Sent Track Number to the Left (DDI 511): 58
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 59
-Sent Actual Track Number (DDI 509): 59
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 59 (59)
-Implement reported Actual Track Number (DDI 509): 59
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 59 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 60 (60)
-Implement reported Track Number to the Right (DDI 510): 60
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 60 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 58 (58)
-Implement reported Track Number to the Left (DDI 511): 58
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 58 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 2
-  Unique A-B Reference ID: 1
-  Current Track: 60
-  Track to Left: 59
-  Track to Right: 61
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 2
-Sent Tramline Sequence Number (DDI 507): 2 (raw: -2147483646)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 61
-Sent Track Number to the Right (DDI 510): 61
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 59
-Sent Track Number to the Left (DDI 511): 59
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 60
-Sent Actual Track Number (DDI 509): 60
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 60 (60)
-Implement reported Actual Track Number (DDI 509): 60
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 60 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 61 (61)
-Implement reported Track Number to the Right (DDI 510): 61
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 61 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 59 (59)
-Implement reported Track Number to the Left (DDI 511): 59
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 59 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-PD value from client 204: DDI 505 (Tramline Control Level), element 0, value 3 (Reserved)
-Implement Tramline Control Level support: L1=Yes, L2=Yes, L3=No Selected Tramline Control Level: 1
-Tramline control level unchanged; skipping DDI 506 send.
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Control Level with value Reserved OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 3
-  Unique A-B Reference ID: 1
-  Current Track: 61
-  Track to Left: 60
-  Track to Right: 62
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 3
-Sent Tramline Sequence Number (DDI 507): 3 (raw: -2147483645)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 62
-Sent Track Number to the Right (DDI 510): 62
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 60
-Sent Track Number to the Left (DDI 511): 60
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 61
-Sent Actual Track Number (DDI 509): 61
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 61 (61)
-Implement reported Actual Track Number (DDI 509): 61
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 61 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 62 (62)
-Implement reported Track Number to the Right (DDI 510): 62
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 62 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 60 (60)
-Implement reported Track Number to the Left (DDI 511): 60
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 60 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 4
-  Unique A-B Reference ID: 1
-  Current Track: 62
-  Track to Left: 61
-  Track to Right: 63
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 4
-Sent Tramline Sequence Number (DDI 507): 4 (raw: -2147483644)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 63
-Sent Track Number to the Right (DDI 510): 63
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 61
-Sent Track Number to the Left (DDI 511): 61
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 62
-Sent Actual Track Number (DDI 509): 62
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 62 (62)
-Implement reported Actual Track Number (DDI 509): 62
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 62 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 63 (63)
-Implement reported Track Number to the Right (DDI 510): 63
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 63 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 61 (61)
-Implement reported Track Number to the Left (DDI 511): 61
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 61 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 5
-  Unique A-B Reference ID: 1
-  Current Track: 63
-  Track to Left: 62
-  Track to Right: 64
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 5
-Sent Tramline Sequence Number (DDI 507): 5 (raw: -2147483643)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 64
-Sent Track Number to the Right (DDI 510): 64
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 62
-Sent Track Number to the Left (DDI 511): 62
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 63
-Sent Actual Track Number (DDI 509): 63
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 63 (63)
-Implement reported Actual Track Number (DDI 509): 63
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 63 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 64 (64)
-Implement reported Track Number to the Right (DDI 510): 64
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 64 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 62 (62)
-Implement reported Track Number to the Left (DDI 511): 62
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 62 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-PD value from client 204: DDI 505 (Tramline Control Level), element 0, value 3 (Reserved)
-Implement Tramline Control Level support: L1=Yes, L2=Yes, L3=No Selected Tramline Control Level: 1
-Tramline control level unchanged; skipping DDI 506 send.
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Control Level with value Reserved OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 6
-  Unique A-B Reference ID: 1
-  Current Track: 64
-  Track to Left: 63
-  Track to Right: 65
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 6
-Sent Tramline Sequence Number (DDI 507): 6 (raw: -2147483642)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 65
-Sent Track Number to the Right (DDI 510): 65
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 63
-Sent Track Number to the Left (DDI 511): 63
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 64
-Sent Actual Track Number (DDI 509): 64
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 64 (64)
-Implement reported Actual Track Number (DDI 509): 64
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 64 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 65 (65)
-Implement reported Track Number to the Right (DDI 510): 65
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 65 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 63 (63)
-Implement reported Track Number to the Left (DDI 511): 63
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 63 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 7
-  Unique A-B Reference ID: 1
-  Current Track: 65
-  Track to Left: 64
-  Track to Right: 66
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 7
-Sent Tramline Sequence Number (DDI 507): 7 (raw: -2147483641)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 66
-Sent Track Number to the Right (DDI 510): 66
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 64
-Sent Track Number to the Left (DDI 511): 64
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 65
-Sent Actual Track Number (DDI 509): 65
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 65 (65)
-Implement reported Actual Track Number (DDI 509): 65
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 65 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 66 (66)
-Implement reported Track Number to the Right (DDI 510): 66
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 66 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 64 (64)
-Implement reported Track Number to the Left (DDI 511): 64
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 64 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=OFF, right=ON
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-AOG tramline change detected: left=ON, right=ON
-########      Both tramlines are now active; triggering next tramline sequence.
-Tramline sequence triggered:
-  Sequence Number: 8
-  Unique A-B Reference ID: 1
-  Current Track: 66
-  Track to Left: 65
-  Track to Right: 67
-[Debug][TC Server]: Sending set value to client 204 for DDI Tramline Sequence Number element 0 with value 8
-Sent Tramline Sequence Number (DDI 507): 8 (raw: -2147483640)
-[Debug][TC Server]: Sending set value to client 204 for DDI Unique A-B Guidance Reference Line ID element 0 with value 1
-Sent Unique A-B Guidance Reference Line ID (DDI 508): 1 (raw: -2147483647)
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the right element 0 with value 67
-Sent Track Number to the Right (DDI 510): 67
-[Debug][TC Server]: Sending set value to client 204 for DDI Track Number to the left element 0 with value 65
-Sent Track Number to the Left (DDI 511): 65
-[Debug][TC Server]: Sending set value to client 204 for DDI Actual Track Number element 0 with value 66
-Sent Actual Track Number (DDI 509): 66
-PD value from client 204: DDI 509 (Actual Track Number), element 0, value 66 (66)
-Implement reported Actual Track Number (DDI 509): 66
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Track Number with value 66 OK.
-PD value from client 204: DDI 510 (Track Number to the right), element 0, value 67 (67)
-Implement reported Track Number to the Right (DDI 510): 67
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the right with value 67 OK.
-PD value from client 204: DDI 511 (Track Number to the left), element 0, value 65 (65)
-Implement reported Track Number to the Left (DDI 511): 65
-[Debug][TC Server]: Client 204 value command for element 0 DDI Track Number to the left with value 65 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 505 (Tramline Control Level), element 0, value 3 (Reserved)
-Implement Tramline Control Level support: L1=Yes, L2=Yes, L3=No Selected Tramline Control Level: 1
-Tramline control level unchanged; skipping DDI 506 send.
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Control Level with value Reserved OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
-PD value from client 204: DDI 505 (Tramline Control Level), element 0, value 3 (Reserved)
-Implement Tramline Control Level support: L1=Yes, L2=Yes, L3=No Selected Tramline Control Level: 1
-Tramline control level unchanged; skipping DDI 506 send.
-[Debug][TC Server]: Client 204 value command for element 0 DDI Tramline Control Level with value Reserved OK.
-PD value from client 204: DDI 141 (Actual Work State), element 0, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 0 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 141 (Actual Work State), element 2, value 0 (Off)
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Work State with value Off OK.
-PD value from client 204: DDI 161 (Actual Condensed Work State (1-16)), element 2, value -16 (0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
-Element 2 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
 Element 0 work state is OFF, forcing sections to OFF
-[Debug][TC Server]: Client 204 value command for element 2 DDI Actual Condensed Work State (1-16) with value 0 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.
+PD value from client 129: DDI 141 (Actual Work State), element 0, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 0 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 3, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 141 (Actual Work State), element 4, value 0 (Off)
+[Debug][TC Server]: Client 129 value command for element 4 DDI Actual Work State with value Off OK.
+PD value from client 129: DDI 161 (Actual Condensed Work State (1-16)), element 3, value -4 (0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3)
+Element 3 work state is OFF, forcing sections to OFF
+Element 0 work state is OFF, forcing sections to OFF
+[Debug][TC Server]: Client 129 value command for element 3 DDI Actual Condensed Work State (1-16) with value 0 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 OK.

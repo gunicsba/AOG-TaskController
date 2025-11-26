@@ -30,3 +30,5 @@ cmake --build build --config Release --target package
 ```
 
 The installer will be generated in the `build` directory.
+
+C:\Program Files\AOG-TaskController\bin>AOG-TaskController.exe --can_adapter=peak-pcan --can_channel=2 --log_level=debug --log2file
