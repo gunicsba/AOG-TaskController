@@ -1,4 +1,4 @@
 build/
 .vscode/
 .vs/
-out/
+out/_codeql_detected_source_root
