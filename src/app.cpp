@@ -399,7 +399,10 @@ bool Application::update()
 	// if (nmea2000MessageInterface) nmea2000MessageInterface->update();
 	
 	if (vtClient) {
-		vtClient->update();
+		// Only call update() after the VT client has been initialized
+		if (vtClientStarted) {
+			vtClient->update();
+		}
 		// Diagnostic: List all control functions on the bus
 		static std::uint32_t lastBusScanMs = 0;
 		if (isobus::SystemTiming::time_expired_ms(lastBusScanMs, 10000)) { // Every 10 seconds
@@ -437,11 +440,11 @@ bool Application::update()
 				static std::uint32_t vtPartnerFirstSeenMs = 0;
 				if (vtPartnerFirstSeenMs == 0) {
 					vtPartnerFirstSeenMs = isobus::SystemTiming::get_timestamp_ms();
-					std::cout << "[VT] Partner discovered at address " << static_cast<int>(vtPartner->get_address()) << ", waiting 5 seconds before initializing..." << std::endl;
+					std::cout << "[VT] Partner discovered at address " << static_cast<int>(vtPartner->get_address()) << ", initializing VT client..." << std::endl;
 				}
 				
-				// Wait 2 seconds after VT partner appears before initializing
-				if (isobus::SystemTiming::time_expired_ms(vtPartnerFirstSeenMs, 5000)) {
+				// Wait 1 second after VT partner appears before initializing to ensure stable address
+				if (isobus::SystemTiming::time_expired_ms(vtPartnerFirstSeenMs, 1000)) {
 					std::cout << "[VT] Initializing VT client..." << std::endl;
 					vtClient->initialize(true); // true = spawns own thread
 					vtClientStarted = true;
@@ -495,12 +498,15 @@ bool Application::update()
 		}
 		
 		// Only send discovery requests if we've never seen the VT, or it disappeared after being seen
-		if (vtClientReady && !vtClient->get_is_connected() && !vtPartner->get_address_valid() && 
+		// Use tecuControlFunction since tcControlFunction may be nullptr
+		if (vtClientStarted && !vtClient->get_is_connected() && !vtPartner->get_address_valid() && 
 		    isobus::SystemTiming::time_expired_ms(lastDiscoveryRequest, 5000)) {
 			const std::array<std::uint8_t,3> requestPGN = { 0x00, 0xEE, 0x00 }; // PGN 60928 (Address Claimed)
-			isobus::CANNetworkManager::CANNetwork.send_can_message(0x18EAFF00, requestPGN.data(), requestPGN.size(), tcControlFunction);
-			lastDiscoveryRequest = isobus::SystemTiming::get_timestamp_ms();
-			std::cout << "[VT] Sent 'Request Address Claimed' (PGN 60928) to global" << std::endl;
+			if (tecuControlFunction) {
+				isobus::CANNetworkManager::CANNetwork.send_can_message(0x18EAFF00, requestPGN.data(), requestPGN.size(), tecuControlFunction);
+				lastDiscoveryRequest = isobus::SystemTiming::get_timestamp_ms();
+				std::cout << "[VT] Sent 'Request Address Claimed' (PGN 60928) to global" << std::endl;
+			}
 		}
 		
 		static std::uint32_t lastConnectionStatusUpdate = 0;
