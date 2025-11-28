@@ -22,6 +22,7 @@
 
 // Virtual Terminal Client
 #include "isobus/isobus/isobus_virtual_terminal_client.hpp"
+#include "isobus/isobus/isobus_virtual_terminal_client_update_helper.hpp"
 #include "isobus/isobus/isobus_diagnostic_protocol.hpp"
 #include "../src/AOG_TC.iop.h"  // Include the IOP header for object ID definitions
 
@@ -30,6 +31,8 @@
 
 #include <vector>
 #include <cstdint>
+#include <string>
+#include <atomic>
 
 class Application
 {
@@ -51,10 +54,13 @@ private:
 	std::shared_ptr<isobus::InternalControlFunction> tecuControlFunction;
 	
 	std::shared_ptr<isobus::VirtualTerminalClient> vtClient;
+	std::unique_ptr<isobus::VirtualTerminalClientUpdateHelper> vtUpdateHelper;
 	std::unique_ptr<isobus::DiagnosticProtocol> diagnosticProtocol;
 	std::vector<std::uint8_t> objectPool;
 	
 	// VT Event handlers and helpers
+	void perform_bus_scan_to_vt();
+	void perform_implement_size_display();
 	void set_output_number_value(std::uint16_t objectID, std::uint32_t value);
 	void handle_vt_key_events(const isobus::VirtualTerminalClient::VTKeyEvent& event);
 	void handle_numeric_value_events(const isobus::VirtualTerminalClient::VTChangeNumericValueEvent& event);
@@ -75,6 +81,14 @@ private:
 	bool lastVTConnectionState = false;  // Track last state we sent to VT
 	std::uint32_t vtConnectedSinceMs = 0;
 	std::uint32_t lastUdpReconnectMs = 0;
+	std::string lastSectionStates;
+	
+	// XTE CAN message state
+	std::uint8_t xteSid = 0;
+	std::uint32_t lastXteTransmit = 0;
+	
+	// Implement size display page tracking
+	std::uint32_t implementSizePage = 0;
 	
 	std::unique_ptr<isobus::SpeedMessagesInterface> speedMessagesInterface;
 	std::unique_ptr<isobus::NMEA2000MessageInterface> nmea2000MessageInterface;

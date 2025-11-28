@@ -55,6 +55,12 @@ public:
 	 */
 	static std::string get_filename_path(std::string);
 
+	/**
+	 * @brief Set a custom working directory instead of %APPDATA%
+	 * @param path The custom working directory path
+	 */
+	static void set_working_directory(const std::string& path);
+
 private:
 	constexpr static std::array<std::uint8_t, 3> DEFAULT_SUBNET = { 192, 168, 5 };
 	std::array<std::uint8_t, 3> configuredSubnet = DEFAULT_SUBNET;

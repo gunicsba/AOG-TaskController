@@ -17,6 +17,22 @@
 #define TRAY_ICON_ID 1
 static std::atomic_bool running = { true };
 
+// Console control handler for Ctrl+C
+BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
+{
+	switch (dwCtrlType)
+	{
+		case CTRL_C_EVENT:
+		case CTRL_BREAK_EVENT:
+		case CTRL_CLOSE_EVENT:
+			std::cout << "\nShutting down gracefully..." << std::endl;
+			running = false;
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
 // Window procedure to handle messages
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -107,6 +123,11 @@ public:
 		return fileLogging;
 	}
 
+	std::string get_work_dir() const
+	{
+		return workDir;
+	}
+
 private:
 	bool parse_option(std::string option)
 	{
@@ -116,10 +137,11 @@ private:
 			std::cout << "Options:\n";
 			std::cout << "  --help\t\tShow this help message\n";
 			std::cout << "  --version\t\tShow the version of the application\n";
-			std::cout << "  --adapter=<driver>\tSelect the CAN driver\n";
-			std::cout << "  --channel=<channel>\tSelect the CAN channel\n";
+			std::cout << "  --can_adapter=<driver>\tSelect the CAN driver\n";
+			std::cout << "  --can_channel=<channel>\tSelect the CAN channel\n";
 			std::cout << "  --log_level=<level>\tSet the log level (debug, info, warning, error, critical)\n";
 			std::cout << "  --log2file\t\tLog to file\n";
+			std::cout << "  --work_dir=<path>\tSet working directory for logs and settings (default: %APPDATA%\\AOG-TaskController)\n";
 			exit(0);
 		}
 		else if ("--version" == option)
@@ -199,6 +221,10 @@ private:
 				return false;
 			}
 		}
+		else if ("--work_dir" == key)
+		{
+			workDir = value;
+		}
 		else
 		{
 			return false;
@@ -210,11 +236,12 @@ private:
 	CANAdapter canAdapter = CANAdapter::NONE;
 	std::string canChannel;
 	bool fileLogging = false;
+	std::string workDir;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	// Try to attach to the parent process’s console if it exists
+	// Try to attach to the parent process's console if it exists
 	if (AttachConsole(ATTACH_PARENT_PROCESS))
 	{
 		FILE *fp;
@@ -223,6 +250,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		std::cout << "WARNING: Only start the application if you know what you are doing. It is intended to be started from AgIO!" << std::endl;
 		std::cout << "Press Ctrl+C to stop the application..." << std::endl;
 		std::cout << std::endl; // White space
+			
+		// Register console control handler for Ctrl+C
+		SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 	}
 
 	std::ofstream logFile;
@@ -235,6 +265,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// The sequence is important here, first we process the arguments, then we check if the file logging is enabled, then we log the arguments and version to the console/file.
 	isobus::CANStackLogger::set_can_stack_logger_sink(&logger);
+	
+	// Set working directory if specified
+	if (!argumentProcessor.get_work_dir().empty())
+	{
+		Settings::set_working_directory(argumentProcessor.get_work_dir());
+		std::cout << "Working directory set to: " << argumentProcessor.get_work_dir() << std::endl;
+	}
+	
 	if (argumentProcessor.is_file_logging())
 	{
 		setup_file_logging();
