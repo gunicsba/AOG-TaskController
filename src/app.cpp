@@ -130,19 +130,23 @@ bool Application::initialize()
 	}
 	
 	// Check what addresses were actually claimed for Task Controller
-	if (tcCF && tcCF->get_address_valid()) {
-		std::cout << "Task Controller control function successfully claimed address: " << static_cast<int>(tcCF->get_address()) << " (0x" 
-		          << std::hex << static_cast<int>(tcCF->get_address()) << std::dec << ")" << std::endl;
-	} else {
-		std::cout << "Warning: Task Controller control function address is not valid. This may cause communication issues." << std::endl;
+	if (tcCF) {
+		if (tcCF->get_address_valid()) {
+			std::cout << "Task Controller control function successfully claimed address: " << static_cast<int>(tcCF->get_address()) << " (0x" 
+			          << std::hex << static_cast<int>(tcCF->get_address()) << std::dec << ")" << std::endl;
+		} else {
+			std::cout << "Warning: Task Controller control function address is not valid. This may cause communication issues." << std::endl;
+		}
 	}
 	
 	// Check what addresses were actually claimed for Tractor ECU
-	if (tecuCF && tecuCF->get_address_valid()) {
-		std::cout << "Tractor ECU control function successfully claimed address: " << static_cast<int>(tecuCF->get_address()) << " (0x" 
-		          << std::hex << static_cast<int>(tecuCF->get_address()) << std::dec << ")" << std::endl;
-	} else {
-		std::cout << "Warning: Tractor ECU control function address is not valid. This may cause communication issues." << std::endl;
+	if (tecuCF) {
+		if (tecuCF->get_address_valid()) {
+			std::cout << "Tractor ECU control function successfully claimed address: " << static_cast<int>(tecuCF->get_address()) << " (0x" 
+			          << std::hex << static_cast<int>(tecuCF->get_address()) << std::dec << ")" << std::endl;
+		} else {
+			std::cout << "Warning: Tractor ECU control function address is not valid. This may cause communication issues." << std::endl;
+		}
 	}
 	
 	// If any critical function fails, probably the update thread is not started
