@@ -222,12 +222,12 @@ void UdpConnections::handle_incoming_packets()
 		if (packetProcessed) {
 			lastPacketTime = std::chrono::steady_clock::now().time_since_epoch().count() / 1000000; // Convert to milliseconds
 			// Suppress connection restoration for this diagnostic
-			// if (!isConnected) {
-			// 	isConnected = true;
-			// 	if (connectionStatusCallback) {
-			// 		connectionStatusCallback(true, get_local_ip_address());
-			// 	}
-			// }
+			if (!isConnected) {
+				isConnected = true;
+				if (connectionStatusCallback) {
+			 		connectionStatusCallback(true, get_local_ip_address());
+			 	}
+			}
 		}
 	}
 	else

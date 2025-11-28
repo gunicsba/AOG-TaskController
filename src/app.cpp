@@ -383,7 +383,6 @@ bool Application::initialize()
 			std::int32_t value = data[2] | (data[3] << 8) | (data[4] << 16) | (data[5] << 24);
 			if (identifier == isobus::DataDescriptionIndex::ActualSpeed)
 			{
-				std::cout << "Received actual speed: " << value << " km/h" << std::endl;
 				std::uint16_t speed = std::abs(value);
 				if (speedMessagesInterface) {
 					auto direction = value < 0 ? isobus::SpeedMessagesInterface::MachineDirection::Reverse : isobus::SpeedMessagesInterface::MachineDirection::Forward;
@@ -412,7 +411,6 @@ bool Application::initialize()
 			}
 			else if (identifier == isobus::DataDescriptionIndex::GuidanceLineDeviation)
 			{
-				std::cout << "Received guidance line deviation: " << value << " mm" << std::endl;
 				if (vtUpdateHelper) {
 				     vtUpdateHelper->set_numeric_value(VTXteValue, value);
 				}
@@ -519,16 +517,6 @@ bool Application::update()
 			lastVTStatusLog = isobus::SystemTiming::get_timestamp_ms();
 		}
 		
-		// Track VT connection stability
-		if (vtClient->get_is_connected()) {
-			if (vtConnectedSinceMs == 0) {
-				vtConnectedSinceMs = isobus::SystemTiming::get_timestamp_ms();
-				std::cout << "[VT] Connection established, waiting for stability..." << std::endl;
-			}
-		} else {
-			vtConnectedSinceMs = 0;
-		}
-		
 		// Send Address Claimed request to force VT to re-announce
 		static std::uint32_t lastDiscoveryRequest = 0;
 		static bool vtPartnerEverSeen = false;
@@ -539,21 +527,13 @@ bool Application::update()
 			vtPartnerEverSeen = true;
 		}
 		
-		
-		static std::uint32_t lastConnectionStatusUpdate = 0;
-		// Wait 10 seconds after UDP reconnect AND 5 seconds after VT connects before sending any UI updates
-		bool recentUdpReconnect = (lastUdpReconnectMs != 0 && (isobus::SystemTiming::get_timestamp_ms() - lastUdpReconnectMs) < 10000);
-		unsigned long vtStableTime = (vtConnectedSinceMs != 0) ? (isobus::SystemTiming::get_timestamp_ms() - vtConnectedSinceMs) : 0;
-		if (is_vt_ready() && !recentUdpReconnect && vtStableTime > 5000 && isobus::SystemTiming::time_expired_ms(lastConnectionStatusUpdate, 5000)) {
-			// Only send if the state has changed since last time
-			if (lastConnectionState != lastVTConnectionState || lastLocalAddress.empty()) {
+		if (is_vt_ready()) {
+			if (lastConnectionState != lastVTConnectionState) {
 				vtClient->send_change_background_colour(VTAogIPStr, lastConnectionState ? 2 : 12); // 2 = GREEN 12 = RED
-				if (!lastLocalAddress.empty()) {
-					vtClient->send_change_string_value(VTAogIPStr, lastLocalAddress.length(), lastLocalAddress.c_str());
-				}
 				lastVTConnectionState = lastConnectionState;
 			}
-			lastConnectionStatusUpdate = isobus::SystemTiming::get_timestamp_ms();
+			if(!lastLocalAddress.empty())
+				vtClient->send_change_string_value(VTAogIPStr, lastLocalAddress.length(), lastLocalAddress.c_str());
 		}
 	}
 
@@ -615,7 +595,6 @@ void Application::handle_connection_status_change(bool isConnected, const std::s
 	
 	if (isConnected) {
 		std::cout << "AgOpenGPS connection restored! " << localAddress << std::endl;
-		lastUdpReconnectMs = isobus::SystemTiming::get_timestamp_ms();
 	} else {
 		std::cout << "AgOpenGPS connection lost!" << std::endl;
 	}

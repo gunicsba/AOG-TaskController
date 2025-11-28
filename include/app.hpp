@@ -79,8 +79,6 @@ private:
 	bool lastConnectionState = false;
 	std::string lastLocalAddress;
 	bool lastVTConnectionState = false;  // Track last state we sent to VT
-	std::uint32_t vtConnectedSinceMs = 0;
-	std::uint32_t lastUdpReconnectMs = 0;
 	std::string lastSectionStates;
 	
 	// XTE CAN message state
