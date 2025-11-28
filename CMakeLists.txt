@@ -33,16 +33,6 @@ FetchContent_Declare(
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(isobus)
 
-# Check if Virtual Terminal Client is available in the AgIsoStack++ version
-# We'll add a compile definition if it is
-if(EXISTS "${isobus_SOURCE_DIR}/isobus/include/isobus/isobus/isobus_virtual_terminal_client.hpp")
-    message(STATUS "Virtual Terminal Client support detected in AgIsoStack++")
-    set(HAVE_ISOBUS_VIRTUAL_TERMINAL_CLIENT TRUE)
-else()
-    message(STATUS "Virtual Terminal Client support not found in AgIsoStack++")
-    set(HAVE_ISOBUS_VIRTUAL_TERMINAL_CLIENT FALSE)
-endif()
-
 FetchContent_Declare(
   json
   URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
@@ -74,11 +64,6 @@ target_include_directories(${PROJECT_NAME}
 target_compile_definitions(
   ${PROJECT_NAME} PUBLIC PROJECT_VERSION="${PROJECT_VERSION}"
                          PROJECT_NAME="${PROJECT_NAME}")
-
-# Add the VT client definition if available
-if(HAVE_ISOBUS_VIRTUAL_TERMINAL_CLIENT)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC ISOBUS_VIRTUAL_TERMINAL_CLIENT_AVAILABLE)
-endif()
 
 target_link_libraries(
   ${PROJECT_NAME}

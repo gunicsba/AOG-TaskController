@@ -10,6 +10,7 @@
 #include "udp_connections.hpp"
 #include <cassert>
 #include <iostream>
+#include <chrono>
 
 UdpConnections::UdpConnections(std::shared_ptr<Settings> settings, boost::asio::io_context &ioContext) :
   settings(settings),
@@ -21,6 +22,41 @@ UdpConnections::UdpConnections(std::shared_ptr<Settings> settings, boost::asio::
 void UdpConnections::set_packet_handler(PacketCallback packetCallback)
 {
 	this->packetCallback = packetCallback;
+}
+
+void UdpConnections::set_connection_status_handler(ConnectionStatusCallback statusCallback)
+{
+	this->connectionStatusCallback = statusCallback;
+}
+
+std::string UdpConnections::get_local_ip_address() const
+{
+	auto subnet = settings->get_subnet();
+	try
+	{
+		boost::asio::io_context io_context;
+		boost::asio::ip::tcp::resolver resolver(io_context);
+		auto endpoints = resolver.resolve(boost::asio::ip::host_name(), "");
+
+		for (const auto &endpoint : endpoints)
+		{
+			const auto &addr = endpoint.endpoint().address();
+
+			if (addr.is_v4())
+			{
+				auto octets = addr.to_v4().to_bytes();
+				if (std::equal(subnet.begin(), subnet.begin() + 3, octets.begin()))
+				{
+					return addr.to_string();
+				}
+			}
+		}
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "Error getting local IP: " << e.what() << std::endl;
+	}
+	return "127.0.0.1";
 }
 
 bool UdpConnections::open()
@@ -37,6 +73,12 @@ bool UdpConnections::open()
 	udpConnectionAddressDetection.non_blocking(true);
 	udp::endpoint local_any_endpoint(boost::asio::ip::address_v4::any(), 8888); // Bind to 0.0.0.0 to receive packets on all interfaces
 	udpConnectionAddressDetection.bind(local_any_endpoint);
+
+	// Notify the UI of the local IP address
+	if (connectionStatusCallback) {
+		std::string localIP = get_local_ip_address();
+		connectionStatusCallback(false, localIP); // Initially disconnected, but with valid IP
+	}
 
 	return true;
 }
@@ -96,6 +138,8 @@ void UdpConnections::handle_incoming_packets()
 {
 	static std::array<std::uint8_t, 512> rxBuffer;
 	static std::size_t rxIndex = 0;
+	static std::uint32_t lastPacketTime = 0;
+	static bool isConnected = false;
 
 	// Peek to see if we have any data
 	boost::system::error_code error_code;
@@ -104,12 +148,30 @@ void UdpConnections::handle_incoming_packets()
 
 	if (error_code == boost::asio::error::would_block)
 	{
-		// No data available
+		// No data available - check watchdog
+		static auto lastWatchdogCheck = std::chrono::steady_clock::now();
+		auto now = std::chrono::steady_clock::now();
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastWatchdogCheck).count() >= 100) {
+			lastWatchdogCheck = now;
+			if (isConnected && lastPacketTime > 0) {
+				auto timeSinceLastPacket = std::chrono::duration_cast<std::chrono::milliseconds>(
+					std::chrono::steady_clock::now().time_since_epoch() - 
+					std::chrono::milliseconds(lastPacketTime)
+				).count();
+				if (timeSinceLastPacket > 2000) {
+					isConnected = false;
+					if (connectionStatusCallback) {
+						connectionStatusCallback(false, "");
+					}
+				}
+			}
+		}
 	}
 	else if (!error_code)
 	{
 		rxIndex += bytesReceived;
 		std::uint8_t index = 0;
+		bool packetProcessed = false;
 
 		while (rxIndex >= 8)
 		{
@@ -133,6 +195,7 @@ void UdpConnections::handle_incoming_packets()
 				if (packetCallback)
 				{
 					packetCallback(src, pgn, { rxBuffer.data() + index, len });
+					packetProcessed = true;
 				}
 				index += len + 1;
 			}
@@ -153,6 +216,18 @@ void UdpConnections::handle_incoming_packets()
 			{
 				rxIndex = 0;
 			}
+		}
+		
+		// Update connection status if packet was processed
+		if (packetProcessed) {
+			lastPacketTime = std::chrono::steady_clock::now().time_since_epoch().count() / 1000000; // Convert to milliseconds
+			// Suppress connection restoration for this diagnostic
+			// if (!isConnected) {
+			// 	isConnected = true;
+			// 	if (connectionStatusCallback) {
+			// 		connectionStatusCallback(true, get_local_ip_address());
+			// 	}
+			// }
 		}
 	}
 	else

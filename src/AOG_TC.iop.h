@@ -13,8 +13,10 @@
 #define VTSpeedLabel                      11002
 #define VTXteLabel                        11003
 #define VTSectionsFromAOGS                11004
+#define VTAogIPStr                        11005
+#define OutputString_11006                11006
 #define VTSpeedValue                      12000
 #define VTXteValue                        12001
-#define _192367695_20000                  20000
+#define agopen_80x80_20001                20001
 #define FontAttributes_23000              23000
 #define FontAttributes_23001              23001

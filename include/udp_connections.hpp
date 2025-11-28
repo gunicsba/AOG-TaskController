@@ -21,6 +21,11 @@ using boost::asio::ip::udp;
 /// @param data The data of the packet
 using PacketCallback = std::function<void(std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data)>;
 
+/// @brief A callback interface for handling connection status
+/// @param isConnected True if connected to AgOpenGPS, false otherwise
+/// @param localAddress The local IP address (e.g., "192.168.1.100")
+using ConnectionStatusCallback = std::function<void(bool isConnected, const std::string& localAddress)>;
+
 /// @brief UDP connections to communicate with AgOpenGPS
 class UdpConnections
 {
@@ -31,6 +36,18 @@ public:
       * @param ioContext The IO context to use
       */
 	UdpConnections(std::shared_ptr<Settings> settings, boost::asio::io_context &ioContext);
+
+	/**
+      * @brief Set connection status handler
+      * @param statusCallback The callback to use for connection status changes
+      */
+	void set_connection_status_handler(ConnectionStatusCallback statusCallback);
+
+	/**
+      * @brief Get the local IP address that matches the configured subnet
+      * @return The local IP address as a string
+      */
+	std::string get_local_ip_address() const;
 
 	/**
       * @brief Set packet handler
@@ -87,6 +104,7 @@ private:
 	std::uint8_t calculate_crc(std::span<std::uint8_t> data);
 
 	PacketCallback packetCallback = nullptr;
+	ConnectionStatusCallback connectionStatusCallback = nullptr;
 	std::shared_ptr<Settings> settings;
 	udp::socket udpConnection;
 	udp::socket udpConnectionAddressDetection;
