@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "isobus/isobus/isobus_data_dictionary.hpp"
 #include "isobus/isobus/isobus_device_descriptor_object_pool.hpp"
 #include "isobus/isobus/isobus_standard_data_description_indices.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
@@ -16,6 +17,7 @@
 #include <cstdint>
 #include <map>
 #include <queue>
+#include <vector>
 
 constexpr std::uint8_t NUMBER_SECTIONS_PER_CONDENSED_MESSAGE = 16;
 
@@ -47,7 +49,57 @@ public:
 	bool are_measurement_commands_sent() const;
 	void mark_measurement_commands_sent();
 	std::uint16_t get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
+	bool try_get_element_number_for_ddi(
+	  isobus::DataDescriptionIndex ddi,
+	  std::uint16_t &elementNumber) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
+
+	// Element work state management
+	void set_element_work_state(std::uint16_t elementNumber, bool isWorking);
+	bool get_element_work_state(std::uint16_t elementNumber, bool &isWorking) const;
+
+	bool get_left_tramline_state() const;
+	void set_left_tramline_state(bool state);
+	bool get_right_tramline_state() const;
+	void set_right_tramline_state(bool state);
+
+	// Tramline control capability (DDI 505) parsed from implement
+	void set_tramline_control_level_support(std::uint8_t supportBits);
+	std::uint8_t get_tramline_control_level_support() const;
+
+	// Selected tramline control level we last sent via DDI 506
+	void set_selected_tramline_control_level(std::uint8_t level);
+	std::uint8_t get_selected_tramline_control_level() const;
+	
+	// Tramline control state (DDI 515) 
+	bool is_tramline_control_enabled() const;
+	void set_tramline_control_enabled(bool state);
+
+	// Track number (DDI 509) we provide to implement for testing
+	void set_track_number(std::uint16_t track);
+	std::uint16_t get_track_number() const;
+
+	// Tramline sequence information
+	// According to ISOBUS specification, tramline parameters must be sent as a group in a specific order:
+	// 1. DDI 507 (Tramline Sequence Number) - first
+	// 2. DDI 508 (Unique A-B Guidance Reference Line ID) - immediately after DDI 507
+	// 3. Other parameters (DDI 509, 510, 511, 669) - after DDI 508
+	// All values belonging to one Tramline Sequence must be sent within 500 milliseconds of each other.
+	void set_tramline_sequence_number(std::uint32_t sequence);
+	std::uint32_t get_tramline_sequence_number() const;
+	void set_unique_ab_reference_id(std::uint32_t id);
+	std::uint32_t get_unique_ab_reference_id() const;
+	void set_track_number_to_left(std::int32_t track);
+	std::int32_t get_track_number_to_left() const;
+	void set_track_number_to_right(std::int32_t track);
+	std::int32_t get_track_number_to_right() const;
+
+	// Track Number Shift (DDI 669) functionality
+	void set_track_number_shift(std::int32_t shift);
+	std::int32_t get_track_number_shift() const;
+
+	void set_last_tramline_control_state_sent(std::uint8_t state);
+	std::uint8_t get_last_tramline_control_state_sent() const;
 
 private:
 	isobus::DeviceDescriptorObjectPool pool; ///< The device descriptor object pool (DDOP) for the TC
@@ -59,7 +111,19 @@ private:
 	std::vector<std::uint8_t> sectionActualStates; // 2 bits per section (0 = off, 1 = on, 2 = error, 3 = not installed)
 	bool setpointWorkState = false; ///< The overall work state desired
 	bool actualWorkState = false; ///< The overall work state actual
+	std::map<std::uint16_t, bool> elementWorkStates; ///< Work state per element (element number -> is working)
 	bool isSectionControlEnabled = false; ///< Stores auto vs manual mode setting
+	bool leftTramlineState = false; ///< Left tramline on/off state
+	bool rightTramlineState = false; ///< Right tramline on/off state
+	std::uint8_t tramlineControlLevelSupport = 0; ///< Bitmask: bit0=L1, bit1=L2, bit2=L3
+	std::uint8_t selectedTramlineControlLevel = 0xFF; ///< Last sent 506 value (0xFF = unknown)
+	std::uint16_t trackNumber = 1; ///< DDI 509 Actual Track Number (test) - Start with 1 for 1/3 pattern
+	std::uint32_t tramlineSequenceNumber = 1; ///< DDI 507 Tramline Sequence Number (start with 1 as per specification)
+	std::uint32_t uniqueABReferenceID = 1; ///< DDI 508 Unique A-B Guidance Reference Line ID (start with 1 as per specification)
+	std::int32_t trackNumberToLeft = 0; ///< DDI 511 Track Number to the left (will be calculated)
+	std::int32_t trackNumberToRight = 2; ///< DDI 510 Track Number to the right (will be calculated)
+	std::int32_t trackNumberShift = 0; ///< DDI 669 Track Number Shift (default: 0 - no shift)
+	std::uint8_t lastSentTramlineControlState = 0xFF; ///< Cache last DDI 515 value to avoid spamming
 };
 
 // Create the task controller server object, this will handle all the ISOBUS communication for us
@@ -67,7 +131,11 @@ class MyTCServer : public isobus::TaskControllerServer
 {
 public:
 	MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internalControlFunction);
-	bool activate_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF, ObjectPoolActivationError &, ObjectPoolErrorCodes &, std::uint16_t &, std::uint16_t &) override;
+	bool activate_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF,
+	                          ObjectPoolActivationError &,
+	                          ObjectPoolErrorCodes &,
+	                          std::uint16_t &,
+	                          std::uint16_t &) override;
 	bool change_designator(std::shared_ptr<isobus::ControlFunction>, std::uint16_t, const std::vector<std::uint8_t> &) override;
 	bool deactivate_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF) override;
 	bool delete_device_descriptor_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF, ObjectPoolDeletionErrors &) override;
@@ -76,7 +144,11 @@ public:
 	bool get_is_enough_memory_available(std::uint32_t) override;
 	void identify_task_controller(std::uint8_t) override;
 	void on_client_timeout(std::shared_ptr<isobus::ControlFunction> partner) override;
-	void on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunction> partner, std::uint16_t dataDescriptionIndex, std::uint16_t elementNumber, std::uint8_t errorCodesFromClient, ProcessDataCommands processDataCommand) override;
+	void on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunction> partner,
+	                                 std::uint16_t dataDescriptionIndex,
+	                                 std::uint16_t elementNumber,
+	                                 std::uint8_t errorCodesFromClient,
+	                                 ProcessDataCommands processDataCommand) override;
 	bool on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
 	                      std::uint16_t dataDescriptionIndex,
 	                      std::uint16_t elementNumber,
@@ -87,6 +159,14 @@ public:
 	void request_measurement_commands();
 	void update_section_states(std::vector<bool> &sectionStates);
 	void update_section_control_enabled(bool enabled);
+	void update_tramline_states(bool leftTram, bool rightTram);
+	void handle_tramline_sequence(std::shared_ptr<isobus::ControlFunction> client);
+
+	// Add the missing methods for tramline control
+	void set_left_tramline_state(bool state);
+	void set_right_tramline_state(bool state);
+	void send_setpoint_tramline_control_level(std::shared_ptr<isobus::ControlFunction> client);
+	void set_track_number_shift(std::shared_ptr<isobus::ControlFunction> client, std::int32_t shift);
 
 private:
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);

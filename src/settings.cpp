@@ -82,15 +82,32 @@ bool Settings::set_subnet(std::array<std::uint8_t, 3> subnet, bool save)
 	return true;
 }
 
+static std::string customWorkDir;
+
+void Settings::set_working_directory(const std::string& path)
+{
+	customWorkDir = path;
+}
+
 std::string Settings::get_filename_path(std::string fileName)
 {
-	char path[MAX_PATH];
-	if (SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path) != S_OK)
+	std::string baseDir;
+	
+	// Use custom work directory if set, otherwise use %APPDATA%
+	if (!customWorkDir.empty())
 	{
-		throw std::runtime_error("Failed to get AppData path");
+		baseDir = customWorkDir;
 	}
-
-	std::string baseDir = std::string(path) + "\\" + PROJECT_NAME;
+	else
+	{
+		char path[MAX_PATH];
+		if (SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path) != S_OK)
+		{
+			throw std::runtime_error("Failed to get AppData path");
+		}
+		baseDir = std::string(path) + "\\" + PROJECT_NAME;
+	}
+	
 	std::string fullPath = baseDir + "\\" + fileName;
 
 	// Find the last directory separator (before the actual file name)

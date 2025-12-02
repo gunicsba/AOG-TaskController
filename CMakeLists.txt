@@ -28,8 +28,8 @@ FetchContent_MakeAvailable(Boost)
 
 FetchContent_Declare(
   isobus
-  GIT_REPOSITORY https://github.com/Open-Agriculture/AgIsoStack-plus-plus.git
-  GIT_TAG 495eba6653010449d6202165240da7623243f416
+  GIT_REPOSITORY https://github.com/gunicsba/AgIsoStack-plus-plus.git
+  GIT_TAG 43da372bb8c5ab221a91550609895ccf0b0b310a
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(isobus)
 
@@ -49,6 +49,9 @@ FetchContent_MakeAvailable(git_version)
 find_package(Threads REQUIRED)
 
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
+# Exclude the example file and console footer from the build
+list(FILTER SRC_FILES EXCLUDE REGEX "footer_example.cpp")
+list(FILTER SRC_FILES EXCLUDE REGEX "console_footer.cpp")
 add_executable(${PROJECT_NAME} ${SRC_FILES} resources/AppIcon.rc)
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
@@ -143,8 +146,25 @@ add_custom_command(
     "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
   VERBATIM)
 
+# Copy IOP file to the build directory
+add_custom_command(
+  TARGET ${PROJECT_NAME}
+  POST_BUILD
+  COMMENT "Copying AOG_TC.iop to the binary directory"
+  COMMAND
+    "${CMAKE_COMMAND}" -E copy_if_different
+    ${CMAKE_CURRENT_LIST_DIR}/src/AOG_TC.iop
+    "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+  VERBATIM)
+
 install(
   FILES ${CMAKE_CURRENT_LIST_DIR}/lib/Usbcan64.dll
+  DESTINATION bin
+  COMPONENT applications)
+
+# Install IOP file
+install(
+  FILES ${CMAKE_CURRENT_LIST_DIR}/src/AOG_TC.iop
   DESTINATION bin
   COMPONENT applications)
 
