@@ -29,7 +29,7 @@ FetchContent_MakeAvailable(Boost)
 FetchContent_Declare(
   isobus
   GIT_REPOSITORY https://github.com/gunicsba/AgIsoStack-plus-plus.git
-  GIT_TAG 47c0a5ecec3929a51e3d9143e7b61660d08bc00b
+  GIT_TAG 43da372bb8c5ab221a91550609895ccf0b0b310a
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(isobus)
 

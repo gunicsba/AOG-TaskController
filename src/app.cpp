@@ -337,7 +337,7 @@ bool Application::initialize()
 				}
 				if(vtClient) {
 					if(ss != lastSectionStates){
-						vtClient->send_change_string_value(VTSectionsFromAOGS, 16, ss.c_str());
+//						vtClient->send_change_string_value(VTSectionsFromAOGS, 16, ss.c_str());
 						lastSectionStates = ss;
 					}
 				}
@@ -441,7 +441,6 @@ bool Application::initialize()
 			}
 			else if (static_cast<std::uint16_t>(identifier) == 597 /*isobus::DataDescriptionIndex::TotalDistance*/)
 			{
-				std::cout << "Received total distance: " << value << " mm" << std::endl;
 				auto distance = static_cast<std::uint32_t>(value);
 				if (speedMessagesInterface) {
 					speedMessagesInterface->groundBasedSpeedTransmitData.set_machine_distance(distance);
