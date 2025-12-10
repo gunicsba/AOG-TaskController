@@ -947,7 +947,7 @@ void MyTCServer::update_section_states(std::vector<bool> &sectionStates)
 		}
 		if (requiresUpdate)
 		{
-			std::uint8_t ddiOffset = state.get_number_of_sections() / NUMBER_SECTIONS_PER_CONDENSED_MESSAGE;
+			std::uint8_t ddiOffset = (state.get_number_of_sections() - 1) / NUMBER_SECTIONS_PER_CONDENSED_MESSAGE;
 			send_section_setpoint_states(client.first, ddiOffset);
 		}
 	}
