@@ -54,57 +54,93 @@ bool Application::initialize()
 	ourNAME.set_device_class_instance(0);
 	ourNAME.set_manufacturer_code(1407);
 
-	auto serverCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(ourNAME, 0, isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer); // The preferred address for a TC is defined in ISO 11783
-	auto addressClaimedFuture = std::async(std::launch::async, [&serverCF]() {
-		while (!serverCF->get_address_valid())
-			std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
+	// Create separate NAME objects for Task Controller and Tractor ECU
+	isobus::NAME tcNAME = ourNAME; // Copy the base configuration
+	tcNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::TaskController));
+	
+	isobus::NAME tecuNAME = ourNAME; // Copy the base configuration
+	tecuNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::TractorECU));
 
-	// If this fails, probably the update thread is not started
-	addressClaimedFuture.wait_for(std::chrono::seconds(5));
-	if (!serverCF->get_address_valid())
+	// Create separate control functions for Task Controller and Tractor ECU
+	// Task Controller will use address 0x26 (38) as required
+	// Tractor ECU will use a different address to avoid conflicts
+	auto tcCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tcNAME, 0, isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer); // Task Controller address
+	auto tecuCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU); // TECU preferred address
+	
+	// Wait for both address claiming processes to complete
+	auto tcAddressClaimedFuture = std::async(std::launch::async, [&tcCF]() {
+		// Wait up to 10 seconds for address validation
+		auto startTime = std::chrono::steady_clock::now();
+		while (!tcCF->get_address_valid() && 
+		       (std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	});
+
+	auto tecuAddressClaimedFuture = std::async(std::launch::async, [&tecuCF]() {
+		// Wait up to 10 seconds for address validation
+		auto startTime = std::chrono::steady_clock::now();
+		while (!tecuCF->get_address_valid() && 
+		       (std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	});
+
+	// Wait for address claiming with timeout
+	if (tcAddressClaimedFuture.wait_for(std::chrono::seconds(10)) == std::future_status::timeout) {
+		std::cout << "Warning: Task Controller address claiming timed out. The control function may not have claimed the desired address." << std::endl;
+	}
+
+	if (tecuAddressClaimedFuture.wait_for(std::chrono::seconds(10)) == std::future_status::timeout) {
+		std::cout << "Warning: Tractor ECU address claiming timed out. The control function may not have claimed the desired address." << std::endl;
+	}
+
+	// Check what addresses were actually claimed for Task Controller
+	if (tcCF->get_address_valid()) {
+		std::cout << "Task Controller control function successfully claimed address: " << static_cast<int>(tcCF->get_address()) << " (0x" 
+		          << std::hex << static_cast<int>(tcCF->get_address()) << std::dec << ")" << std::endl;
+		
+		// If the address is not what we wanted, log a warning
+		if (tcCF->get_address() != isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer) {
+			std::cout << "Warning: Task Controller control function claimed address " << static_cast<int>(tcCF->get_address()) 
+			          << " instead of the requested address " << isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer << std::endl;
+			std::cout << "This may cause communication issues with implements expecting messages from address." << std::endl;
+		}
+	} else {
+		std::cout << "Warning: Task Controller control function address is not valid. This may cause communication issues." << std::endl;
+	}
+	
+	// Check what addresses were actually claimed for Tractor ECU
+	if (tecuCF->get_address_valid()) {
+		std::cout << "Tractor ECU control function successfully claimed address: " << static_cast<int>(tecuCF->get_address()) << " (0x" 
+		          << std::hex << static_cast<int>(tecuCF->get_address()) << std::dec << ")" << std::endl;
+	} else {
+		std::cout << "Warning: Tractor ECU control function address is not valid. This may cause communication issues." << std::endl;
+	}
+
+	// If either fails, probably the update thread is not started
+	if (!tcCF->get_address_valid() ) //  || !tecuCF->get_address_valid())
 	{
-		std::cout << "Failed to claim address for TC server. The control function might be invalid." << std::endl;
+		std::cout << "Failed to claim address for one or more control functions. The control function(s) might be invalid." << std::endl;
 		return false;
 	}
 
-	tcServer = std::make_shared<MyTCServer>(serverCF);
+	// Store the control functions in member variables
+	tcControlFunction = tcCF;
+	tecuControlFunction = tecuCF;
+
+	// Use the Task Controller control function for the server (as it needs to send TC messages)
+	tcServer = std::make_shared<MyTCServer>(tcCF);
 	auto &languageInterface = tcServer->get_language_command_interface();
 	languageInterface.set_language_code("en"); // This is the default, but you can change it if you want
 	languageInterface.set_country_code("US"); // This is the default, but you can change it if you want
 	tcServer->initialize();
 	tcServer->set_task_totals_active(true); // TODO: make this dynamic based on status in AOG
 
-	std::cout << "Task controller server started." << std::endl;
-
-	// Create TECU control function for speed messages
-	isobus::NAME tecuNAME(0);
-	tecuNAME.set_arbitrary_address_capable(true);
-	tecuNAME.set_industry_group(2);
-	tecuNAME.set_device_class(0);
-	tecuNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::TractorECU));
-	tecuNAME.set_identity_number(21);
-	tecuNAME.set_ecu_instance(0);
-	tecuNAME.set_function_instance(0);
-	tecuNAME.set_device_class_instance(0);
-	tecuNAME.set_manufacturer_code(1407);
-
-	tecuControlFunction = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU);
-	auto tecuAddressClaimedFuture = std::async(std::launch::async, [&]() {
-		while (!tecuControlFunction->get_address_valid())
-			std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
-
-	// If this fails, probably the update thread is not started
-	tecuAddressClaimedFuture.wait_for(std::chrono::seconds(5));
-	if (!tecuControlFunction->get_address_valid())
-	{
-		std::cout << "Failed to claim address for TECU. The control function might be invalid." << std::endl;
-		return false;
-	}
-
-	// Initialize speed and distance messages on TECU
-	speedMessagesInterface = std::make_unique<isobus::SpeedMessagesInterface>(tecuControlFunction, true, true, true, false); //TODO: make configurable whether to send these messages
+	// Initialize speed and distance messages
+	speedMessagesInterface = std::make_unique<isobus::SpeedMessagesInterface>(tecuCF, true, true, true, false); //TODO: make configurable whether to send these messages
 	speedMessagesInterface->initialize();
-	nmea2000MessageInterface = std::make_unique<isobus::NMEA2000MessageInterface>(tecuControlFunction, false, false, false, false, false, false, false);
+	nmea2000MessageInterface = std::make_unique<isobus::NMEA2000MessageInterface>(tecuCF, false, false, false, false, false, false, false);
 	nmea2000MessageInterface->initialize();
 	nmea2000MessageInterface->set_enable_sending_cog_sog_cyclically(true); // TODO: make configurable whether to send these messages
 
@@ -113,12 +149,12 @@ bool Application::initialize()
 	speedMessagesInterface->wheelBasedSpeedTransmitData.set_operator_direction_reversed_state(isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::OperatorDirectionReversed::NotAvailable);
 	speedMessagesInterface->machineSelectedSpeedTransmitData.set_speed_source(isobus::SpeedMessagesInterface::MachineSelectedSpeedData::SpeedSource::NavigationBasedSpeed);
 
-	std::cout << "TECU started." << std::endl;
+	std::cout << "Task controller server started." << std::endl;
 
 	static std::uint8_t xteSid = 0;
 	static std::uint32_t lastXteTransmit = 0;
 
-	auto packetHandler = [this, serverCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
+	auto packetHandler = [this, tcCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
 		if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
 		{
 			// TODO: hack to get desired section states. probably want to make a new pgn later when we need more than 16 sections
@@ -187,7 +223,7 @@ bool Application::initialize()
 				};
 				if (isobus::SystemTiming::time_expired_ms(lastXteTransmit, 1000)) // Transmit every second
 				{
-					if (isobus::CANNetworkManager::CANNetwork.send_can_message(0x1F903, xteData.data(), xteData.size(), serverCF))
+					if (isobus::CANNetworkManager::CANNetwork.send_can_message(0x1F903, xteData.data(), xteData.size(), tcCF))
 					{
 						lastXteTransmit = isobus::SystemTiming::get_timestamp_ms();
 					}
