@@ -136,7 +136,7 @@ bool Application::initialize()
 
 				auto &cog_sog_message = nmea2000MessageInterface->get_cog_sog_transmit_message();
 				cog_sog_message.set_sequence_id(nmea2000SequenceIdentifier++);
-				cog_sog_message.set_speed_over_ground(speed);
+				cog_sog_message.set_speed_over_ground(speed/10);
 				cog_sog_message.set_course_over_ground(0); // TODO: Implement course
 				cog_sog_message.set_course_over_ground_reference(isobus::NMEA2000Messages::CourseOverGroundSpeedOverGroundRapidUpdate::CourseOverGroundReference::NotApplicableOrNull);
 			}
