@@ -89,19 +89,17 @@ bool Application::initialize()
 	tecuNAME.set_manufacturer_code(1407);
 
 	tecuControlFunction = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU);
-	auto tecuAddressClaimedFuture = std::async(std::launch::async, [this]() {
+	auto tecuAddressClaimedFuture = std::async(std::launch::async, [&tecuControlFunction = tecuControlFunction]() {
 		while (!tecuControlFunction->get_address_valid())
 			std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
 
+	// If this fails, probably the update thread is not started
 	tecuAddressClaimedFuture.wait_for(std::chrono::seconds(5));
 	if (!tecuControlFunction->get_address_valid())
 	{
 		std::cout << "Failed to claim address for TECU. The control function might be invalid." << std::endl;
 		return false;
 	}
-
-	tecuClient = std::make_shared<isobus::TaskControllerClient>(serverCF, tecuControlFunction);
-	tecuClient->initialize(false);
 
 	// Initialize speed and distance messages on TECU
 	speedMessagesInterface = std::make_unique<isobus::SpeedMessagesInterface>(tecuControlFunction, true, true, true, false); //TODO: make configurable whether to send these messages
@@ -221,7 +219,6 @@ bool Application::update()
 
 	tcServer->request_measurement_commands();
 	tcServer->update();
-	tecuClient->update();
 	speedMessagesInterface->update();
 	nmea2000MessageInterface->update();
 
@@ -257,6 +254,5 @@ bool Application::update()
 void Application::stop()
 {
 	tcServer->terminate();
-	tecuClient->terminate();
 	isobus::CANHardwareInterface::stop();
 }
