@@ -74,10 +74,39 @@ bool Application::initialize()
 	tcServer->initialize();
 	tcServer->set_task_totals_active(true); // TODO: make this dynamic based on status in AOG
 
-	// Initialize speed and distance messages
-	speedMessagesInterface = std::make_unique<isobus::SpeedMessagesInterface>(serverCF, true, true, true, false); //TODO: make configurable whether to send these messages
+	std::cout << "Task controller server started." << std::endl;
+
+	// Create TECU control function for speed messages
+	isobus::NAME tecuNAME(0);
+	tecuNAME.set_arbitrary_address_capable(true);
+	tecuNAME.set_industry_group(2);
+	tecuNAME.set_device_class(0);
+	tecuNAME.set_function_code(static_cast<std::uint8_t>(isobus::NAME::Function::TractorECU));
+	tecuNAME.set_identity_number(21);
+	tecuNAME.set_ecu_instance(0);
+	tecuNAME.set_function_instance(0);
+	tecuNAME.set_device_class_instance(0);
+	tecuNAME.set_manufacturer_code(1407);
+
+	tecuControlFunction = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU);
+	auto tecuAddressClaimedFuture = std::async(std::launch::async, [this]() {
+		while (!tecuControlFunction->get_address_valid())
+			std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
+
+	tecuAddressClaimedFuture.wait_for(std::chrono::seconds(5));
+	if (!tecuControlFunction->get_address_valid())
+	{
+		std::cout << "Failed to claim address for TECU. The control function might be invalid." << std::endl;
+		return false;
+	}
+
+	tecuClient = std::make_shared<isobus::TaskControllerClient>(serverCF, tecuControlFunction);
+	tecuClient->initialize(false);
+
+	// Initialize speed and distance messages on TECU
+	speedMessagesInterface = std::make_unique<isobus::SpeedMessagesInterface>(tecuControlFunction, true, true, true, false); //TODO: make configurable whether to send these messages
 	speedMessagesInterface->initialize();
-	nmea2000MessageInterface = std::make_unique<isobus::NMEA2000MessageInterface>(serverCF, false, false, false, false, false, false, false);
+	nmea2000MessageInterface = std::make_unique<isobus::NMEA2000MessageInterface>(tecuControlFunction, false, false, false, false, false, false, false);
 	nmea2000MessageInterface->initialize();
 	nmea2000MessageInterface->set_enable_sending_cog_sog_cyclically(true); // TODO: make configurable whether to send these messages
 
@@ -86,7 +115,7 @@ bool Application::initialize()
 	speedMessagesInterface->wheelBasedSpeedTransmitData.set_operator_direction_reversed_state(isobus::SpeedMessagesInterface::WheelBasedMachineSpeedData::OperatorDirectionReversed::NotAvailable);
 	speedMessagesInterface->machineSelectedSpeedTransmitData.set_speed_source(isobus::SpeedMessagesInterface::MachineSelectedSpeedData::SpeedSource::NavigationBasedSpeed);
 
-	std::cout << "Task controller server started." << std::endl;
+	std::cout << "TECU started." << std::endl;
 
 	static std::uint8_t xteSid = 0;
 	static std::uint32_t lastXteTransmit = 0;
@@ -192,6 +221,7 @@ bool Application::update()
 
 	tcServer->request_measurement_commands();
 	tcServer->update();
+	tecuClient->update();
 	speedMessagesInterface->update();
 	nmea2000MessageInterface->update();
 
@@ -227,5 +257,6 @@ bool Application::update()
 void Application::stop()
 {
 	tcServer->terminate();
+	tecuClient->terminate();
 	isobus::CANHardwareInterface::stop();
 }
