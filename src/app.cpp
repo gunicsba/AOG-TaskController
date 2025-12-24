@@ -89,7 +89,7 @@ bool Application::initialize()
 	tecuNAME.set_manufacturer_code(1407);
 
 	tecuControlFunction = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU);
-	auto tecuAddressClaimedFuture = std::async(std::launch::async, [&tecuControlFunction = tecuControlFunction]() {
+	auto tecuAddressClaimedFuture = std::async(std::launch::async, [&]() {
 		while (!tecuControlFunction->get_address_valid())
 			std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
 
