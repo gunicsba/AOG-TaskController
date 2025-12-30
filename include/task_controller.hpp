@@ -50,14 +50,21 @@ public:
 	std::uint16_t get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
 	bool has_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
+	const std::map<isobus::DataDescriptionIndex, std::uint16_t> &get_ddi_to_element_map() const;
 	// Element work state management these act like master / override for actual sections
 	void set_element_work_state(std::uint16_t elementNumber, bool isWorking);
 	bool try_get_element_work_state(std::uint16_t elementNumber, bool &isWorking) const;
+	void set_ddi_value(isobus::DataDescriptionIndex ddi, std::int32_t value);
+	bool try_get_ddi_value(isobus::DataDescriptionIndex ddi, std::int32_t &value) const;
+	void set_ddi_element_value(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber, std::int32_t value);
+	bool try_get_ddi_element_value(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber, std::int32_t &value) const;
 
 private:
 	isobus::DeviceDescriptorObjectPool pool; ///< The device descriptor object pool (DDOP) for the TC
 	bool areMeasurementCommandsSent = false; ///< Whether or not the measurement commands have been sent
 	std::map<isobus::DataDescriptionIndex, std::uint16_t> ddiToElementNumber; ///< Mapping of DDI to element number // TODO: better way to do this?
+	std::map<isobus::DataDescriptionIndex, std::int32_t> ddiValues; ///< Cached DDI values received from client
+	std::map<std::pair<isobus::DataDescriptionIndex, std::uint16_t>, std::int32_t> ddiElementValues; ///< Cached DDI/element values received from client
 
 	std::uint8_t numberOfSections;
 	std::vector<std::uint8_t> sectionSetpointStates; // 2 bits per section (0 = off, 1 = on, 2 = error, 3 = not installed)
@@ -93,6 +100,12 @@ public:
 	void request_measurement_commands();
 	void update_section_states(std::vector<bool> &sectionStates);
 	void update_section_control_enabled(bool enabled);
+	void save_ddop_with_values_periodic();
+	bool generate_element_data_dump(std::shared_ptr<isobus::ControlFunction> client, std::string &output);
+	bool regenerate_ddop_with_values(std::shared_ptr<isobus::ControlFunction> client, std::vector<std::uint8_t> &updatedBinaryDDOP);
+	void request_all_ddi_values_periodic();
+	void refresh_implement_geometry();
+	std::uint8_t print_implement_geometry(const auto &implement);
 
 private:
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);
@@ -100,4 +113,6 @@ private:
 
 	std::map<std::shared_ptr<isobus::ControlFunction>, ClientState> clients;
 	std::map<std::shared_ptr<isobus::ControlFunction>, std::queue<std::vector<std::uint8_t>>> uploadedPools;
+	std::uint32_t lastDdopWithValuesUpdate = 0; ///< Timestamp of last DDOP with values generation
+	std::uint32_t lastDdiValuesRequest = 0; ///< Timestamp of last DDI values request
 };

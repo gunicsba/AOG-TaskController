@@ -236,6 +236,8 @@ bool Application::update()
 	udpConnections->handle_incoming_packets();
 
 	tcServer->request_measurement_commands();
+	tcServer->request_all_ddi_values_periodic();
+	tcServer->save_ddop_with_values_periodic();
 	tcServer->update();
 	if (speedMessagesInterface)
 		speedMessagesInterface->update();
