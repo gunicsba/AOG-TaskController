@@ -228,8 +228,8 @@ bool ClientState::try_get_element_work_state(std::uint16_t elementNumber, bool &
 MyTCServer::MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internalControlFunction) :
   TaskControllerServer(internalControlFunction,
                        1, // AOG limits to 1 boom
-                       16, // AOG limits to 16 sections of unique width
-                       16, // 16 channels for position based control
+                       64, // AOG limits to 16 sections of unique width but can be 64 by using zones
+                       64, // 64 channels for position based control
                        isobus::TaskControllerOptions()
                          .with_implement_section_control(), // We support section control
                        TaskControllerVersion::SecondEditionDraft)
@@ -238,6 +238,7 @@ MyTCServer::MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internal
 
 bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF, ObjectPoolActivationError &, ObjectPoolErrorCodes &, std::uint16_t &, std::uint16_t &)
 {
+	std::cout << "[TC Server] Client " << partnerCF->get_NAME().get_full_name() << " requesting object pool activation" << std::endl;
 	// Safety check to make sure partnerCF has uploaded a DDOP
 	if (uploadedPools.find(partnerCF) == uploadedPools.end())
 	{
@@ -271,7 +272,14 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 				break;
 			}
 		}
-		auto fileName = std::to_string(partnerCF->get_NAME().get_full_name()) + "\\" + std::string(deviceObject->get_localization_label().begin(), deviceObject->get_localization_label().end()) + ".iop";
+
+		auto labelBytes = deviceObject->get_localization_label();
+		std::string label(reinterpret_cast<const char *>(labelBytes.data()), labelBytes.size());
+		// trim at first occurrence of null or ETX (0x03)
+		auto it = std::find_if(label.begin(), label.end(), [](char c) { return c == '\0' || static_cast<unsigned char>(c) == 0x03; });
+		label.erase(it, label.end());
+
+		auto fileName = std::to_string(partnerCF->get_NAME().get_full_name()) + "\\" + label + ".ddop";
 		std::vector<std::uint8_t> binaryPool;
 		if (state.get_pool().generate_binary_object_pool(binaryPool))
 		{
@@ -280,10 +288,11 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 			{
 				outFile.write(reinterpret_cast<const char *>(binaryPool.data()), binaryPool.size());
 				outFile.close();
+				std::cout << "Saved DDOP to file: " << fileName << std::endl;
 			}
 			else
 			{
-				std::cout << "Unable to save DDOP to NVM. (Failed to open file)" << std::endl;
+				std::cout << "Unable to save DDOP to NVM. (Failed to open file) file: " << fileName << std::endl;
 			}
 		}
 		else
@@ -331,6 +340,8 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 	}
 
 	clients[partnerCF] = state;
+	std::cout << "[TC Server] Client " << partnerCF->get_NAME().get_full_name() << " registered successfully with "
+	          << static_cast<int>(state.get_number_of_sections()) << " sections." << std::endl;
 	return true;
 }
 
@@ -377,6 +388,7 @@ void MyTCServer::identify_task_controller(std::uint8_t)
 void MyTCServer::on_client_timeout(std::shared_ptr<isobus::ControlFunction> partner)
 {
 	// Cleanup the client state
+	std::cout << "[TC Server] Client " << partner->get_NAME().get_full_name() << " has timed out!" << std::endl;
 	clients.erase(partner);
 }
 
@@ -444,6 +456,7 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
 
 bool MyTCServer::store_device_descriptor_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF, const std::vector<std::uint8_t> &binaryPool, bool appendToPool)
 {
+	std::cout << "[TC Server] Client " << partnerCF->get_NAME().get_full_name() << " requesting object pool transfer of " << binaryPool.size() << " bytes" << std::endl;
 	if (uploadedPools.find(partnerCF) == uploadedPools.end())
 	{
 		uploadedPools[partnerCF] = std::queue<std::vector<std::uint8_t>>();
@@ -571,7 +584,13 @@ void MyTCServer::update_section_states(std::vector<bool> &sectionStates)
 		if (!state.is_section_control_enabled())
 		{
 			// According to standard, the section setpoint states should only be sent when in auto mode
-			return;
+			continue;
+		}
+
+		// Skip clients that don't have any sections configured (e.g., tractors or other non-implement devices)
+		if (state.get_number_of_sections() == 0)
+		{
+			continue;
 		}
 
 		bool requiresUpdate = false;
@@ -606,9 +625,16 @@ void MyTCServer::update_section_control_enabled(bool enabled)
 {
 	for (auto &client : clients)
 	{
+		// Always update the local flag
 		if (client.second.is_section_control_enabled() != enabled)
 		{
 			client.second.set_section_control_enabled(enabled);
+		}
+
+		// Only send ISOBUS command to clients that support SectionControlState DDI and have sections
+		if (client.second.has_element_number_for_ddi(isobus::DataDescriptionIndex::SectionControlState) &&
+		    client.second.get_number_of_sections() > 0)
+		{
 			send_section_control_state(client.first, enabled);
 		}
 	}

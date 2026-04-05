@@ -84,8 +84,8 @@ bool Application::initialize()
 	// Create TECU control function
 	// TODO: Should we wait between this and TC?
 	// TODO: If there's already a TECU on the bus we should not create ours
-	if (tcCF)
-	{ // Only create TECU if TC was created
+	if (tcCF && settings->is_tecu_enabled())
+	{ // Only create TECU if TC was created and ECU is enabled
 		std::cout << "[Init] Creating Tractor ECU control function..." << std::endl;
 		tecuCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU);
 		std::cout << "[Init] Tractor ECU control function created, waiting 1.5 seconds..." << std::endl;
@@ -125,7 +125,14 @@ bool Application::initialize()
 	}
 	else
 	{
-		std::cout << "[Warning] TECU Control Function not available, Speed/NMEA interfaces not created" << std::endl;
+		if (!settings->is_tecu_enabled())
+		{
+			std::cout << "[Info] Tractor ECU disabled in settings, skipping ECU initialization." << std::endl;
+		}
+		else
+		{
+			std::cout << "[Warning] TECU Control Function not available, Speed/NMEA interfaces not created" << std::endl;
+		}
 	}
 
 	std::cout << "Task controller server started." << std::endl;
@@ -134,19 +141,16 @@ bool Application::initialize()
 	static std::uint32_t lastXteTransmit = 0;
 
 	auto packetHandler = [this, tcCF](std::uint8_t src, std::uint8_t pgn, std::span<std::uint8_t> data) {
-		if (src == 0x7F && pgn == 0xFE) // 254 - Steer Data
+		if (src == 0x7F && pgn == 0xE5) // 229 - 64 sections PGN
 		{
-			// TODO: hack to get desired section states. probably want to make a new pgn later when we need more than 16 sections
 			std::vector<bool> sectionStates;
-			for (std::uint8_t i = 0; i < 8; i++)
+			for (std::uint8_t j = 0; j < 8; j++)
 			{
-				sectionStates.push_back(data[6] & (1 << i));
+				for (std::uint8_t i = 0; i < 8; i++)
+				{
+					sectionStates.push_back(data[j] & (1 << i));
+				}
 			}
-			for (std::uint8_t i = 0; i < 8; i++)
-			{
-				sectionStates.push_back(data[7] & (1 << i));
-			}
-
 			tcServer->update_section_states(sectionStates);
 		}
 		else if (src == 0x7F && pgn == 0xF1) // 241 - Section Control
@@ -251,6 +255,13 @@ bool Application::update()
 		for (auto &client : tcServer->get_clients())
 		{
 			auto &state = client.second;
+
+			// Skip clients with no sections (e.g., tractors or non-implement devices)
+			if (state.get_number_of_sections() == 0)
+			{
+				continue;
+			}
+
 			std::vector<uint8_t> data = { state.is_section_control_enabled(), state.get_number_of_sections() };
 
 			std::uint8_t sectionIndex = 0;
