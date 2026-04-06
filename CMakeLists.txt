@@ -40,16 +40,24 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 include(FetchContent)
+# Set policy to allow older CMake versions for git_version dependency
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 FetchContent_Declare(
   git_version
   GIT_REPOSITORY https://github.com/andrew-hardin/cmake-git-version-tracking.git
   GIT_TAG 904dbda1336ba4b9a1415a68d5f203f576b696bb)
 FetchContent_MakeAvailable(git_version)
+unset(CMAKE_POLICY_VERSION_MINIMUM)
 
 find_package(Threads REQUIRED)
 
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
 add_executable(${PROJECT_NAME} ${SRC_FILES} resources/AppIcon.rc)
+
+# Add data_logger.cpp explicitly if not caught by glob
+if(NOT "${CMAKE_CURRENT_LIST_DIR}/src/data_logger.cpp" IN_LIST SRC_FILES)
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/data_logger.cpp)
+endif()
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)

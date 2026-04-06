@@ -28,7 +28,50 @@ Application::Application(std::shared_ptr<isobus::CANHardwarePlugin> canDriver) :
 
 bool Application::initialize()
 {
-	settings->load();
+	// Load settings and announce configuration
+	std::string settingsPath = Settings::get_filename_path("settings.json");
+	std::cout << "[" << get_timestamp() << "] Loading settings from: " << settingsPath << std::endl;
+	
+	bool settingsLoaded = settings->load();
+	if (settingsLoaded && settings->exists())
+	{
+		std::cout << "[" << get_timestamp() << "] Settings loaded successfully." << std::endl;
+	}
+	else
+	{
+		std::cout << "[" << get_timestamp() << "] Settings file not found, created default settings." << std::endl;
+	}
+	
+	// Announce parsed settings values
+	std::cout << "[" << get_timestamp() << "] Configuration:" << std::endl;
+	std::cout << "[" << get_timestamp() << "]   Subnet: " << static_cast<int>(settings->get_subnet()[0]) << "." 
+	          << static_cast<int>(settings->get_subnet()[1]) << "." 
+	          << static_cast<int>(settings->get_subnet()[2]) << ".0" << std::endl;
+	std::cout << "[" << get_timestamp() << "]   TECU Enabled: " << (settings->is_tecu_enabled() ? "Yes" : "No") << std::endl;
+	std::cout << "[" << get_timestamp() << "]   Data Logging Enabled: " << (settings->is_data_logging_enabled() ? "Yes" : "No") << std::endl;
+	if (settings->is_data_logging_enabled())
+	{
+		std::cout << "[" << get_timestamp() << "]     Max File Size: " << settings->get_data_logging_max_file_size_mb() << " MB" << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Frequency: " << settings->get_data_logging_frequency_hz() << " Hz" << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Archive on Startup: " << (settings->is_archive_on_startup_enabled() ? "Yes" : "No") << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Log GPS Data: " << (settings->is_log_gps_data_enabled() ? "Yes" : "No") << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Log ISOBUS Data: " << (settings->is_log_isobus_data_enabled() ? "Yes" : "No") << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Blockage Monitoring: " << (settings->is_blockage_monitoring_enabled() ? "Yes" : "No") << std::endl;
+		std::cout << "[" << get_timestamp() << "]     CSV Delimiter: '" << settings->get_csv_delimiter() << "'" << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Decimal Separator: '" << settings->get_decimal_separator() << "'" << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Date Format: " << settings->get_date_format() << std::endl;
+		std::cout << "[" << get_timestamp() << "]     Time Format: " << settings->get_time_format() << std::endl;
+	}
+	std::cout << "[" << get_timestamp() << "]   Locale: " << settings->get_locale() 
+	          << " (ISOBUS Language Code: " << static_cast<int>(settings->get_isobus_language_code()) << ")" << std::endl;
+
+	// Initialize data logger
+	dataLogger = std::make_shared<DataLogger>(settings);
+	if (!dataLogger->initialize())
+	{
+		std::cout << "[" << get_timestamp() << "] [Warning] Failed to initialize data logger. Continuing without logging." << std::endl;
+	}
+
 	if (nullptr == canDriver)
 	{
 		std::cout << "[" << get_timestamp() << "] Unable to find a CAN driver. Please make sure the selected driver is installed." << std::endl;
@@ -253,6 +296,8 @@ bool Application::initialize()
 			if (identifier == isobus::DataDescriptionIndex::ActualSpeed)
 			{
 				lastSpeedValue = value; // Store the full precision value
+				currentGpsData.speed = std::abs(value) / 10.0; // Convert from mm/s * 10 to m/s
+				currentGpsData.isValid = true;
 				std::uint16_t speed = std::abs(value);
 				auto direction = value < 0 ? isobus::SpeedMessagesInterface::MachineDirection::Reverse : isobus::SpeedMessagesInterface::MachineDirection::Forward;
 				if (speedMessagesInterface)
@@ -312,6 +357,77 @@ bool Application::initialize()
 				speedMessagesInterface->machineSelectedSpeedTransmitData.set_machine_distance(distance);
 			}
 		}
+		// GPS Position Data - PGN 100 (0x64)
+		else if (src == 0x7F && pgn == 0x64 && data.size() >= 16)
+		{
+			// Parse GPS position data from AOG
+			// Bytes 0-7: Longitude (double, little endian)
+			// Bytes 8-15: Latitude (double, little endian)
+			// Bytes 16-23: Fix2Fix (double, little endian) - optional, when len == 24
+			std::memcpy(&currentGpsData.longitude, data.data(), sizeof(double));
+			std::memcpy(&currentGpsData.latitude, data.data() + 8, sizeof(double));
+			currentGpsData.isValid = true;
+		}
+		// GPS Data - PGN 208 (0xD0)
+		else if (src == 0x7C && pgn == 0xD0 && data.size() >= 32)
+		{
+			// Parse GPS data from AOG
+			// Bytes 0-7: Longitude (double, little endian)
+			// Bytes 8-15: Latitude (double, little endian)
+			// Bytes 16-23: Speed in KMH (double, little endian)
+			// Bytes 24-31: Elevation in meters (double, little endian)
+			std::memcpy(&currentGpsData.longitude, data.data(), sizeof(double));
+			std::memcpy(&currentGpsData.latitude, data.data() + 8, sizeof(double));
+			double speedKmh;
+			std::memcpy(&speedKmh, data.data() + 16, sizeof(double));
+			currentGpsData.speed = speedKmh / 3.6; // Convert KMH to m/s
+			std::memcpy(&currentGpsData.height, data.data() + 24, sizeof(double));
+			currentGpsData.isValid = true;
+		}
+		// GPS/IMU Data - PGN 54908 (0xD633)
+		else if (src == 0x7C && pgn == 0xD6 && data.size() >= 51)
+		{
+			// Parse comprehensive GPS/IMU data from AGIO
+			// Bytes 0-7: Longitude (double, little endian)
+			// Bytes 8-15: Latitude (double, little endian)
+			// Bytes 16-19: Heading Dual (float)
+			// Bytes 20-23: True Heading (float)
+			// Bytes 24-27: Speed (float)
+			// Bytes 28-31: Roll (float)
+			// Bytes 32-35: Altitude (float)
+			// Bytes 36-37: Satellites (uint16)
+			// Byte 38: Fix Quality
+			// Bytes 39-40: HDOP x100 (uint16)
+			// Bytes 41-42: Age x100 (uint16)
+			// Bytes 43-44: IMU Heading (uint16, divide by 10)
+			// Bytes 45-46: IMU Roll (int16)
+			// Bytes 47-48: IMU Pitch (int16)
+			// Bytes 49-50: IMU Yaw (uint16)
+			std::memcpy(&currentGpsData.longitude, data.data(), sizeof(double));
+			std::memcpy(&currentGpsData.latitude, data.data() + 8, sizeof(double));
+			std::memcpy(&currentGpsData.headingDual, data.data() + 16, sizeof(float));
+			std::memcpy(&currentGpsData.headingTrue, data.data() + 20, sizeof(float));
+			float speed;
+			std::memcpy(&speed, data.data() + 24, sizeof(float));
+			currentGpsData.speed = speed;
+			float roll;
+			std::memcpy(&roll, data.data() + 28, sizeof(float));
+			currentGpsData.roll = roll;
+			std::memcpy(&currentGpsData.height, data.data() + 32, sizeof(float));
+			std::memcpy(&currentGpsData.satellites, data.data() + 36, sizeof(std::uint16_t));
+			currentGpsData.dgpsState = data[38]; // Fix Quality
+			std::memcpy(&currentGpsData.hdopX100, data.data() + 39, sizeof(std::uint16_t));
+			std::uint16_t ageX100;
+			std::memcpy(&ageX100, data.data() + 41, sizeof(std::uint16_t));
+			currentGpsData.dgpsAge = static_cast<std::uint8_t>(ageX100 / 100); // Convert from x100 to seconds
+			std::uint16_t imuHeadingRaw;
+			std::memcpy(&imuHeadingRaw, data.data() + 43, sizeof(std::uint16_t));
+			currentGpsData.imuHeading = imuHeadingRaw / 10.0f;
+			std::memcpy(&currentGpsData.imuRoll, data.data() + 45, sizeof(std::int16_t));
+			std::memcpy(&currentGpsData.imuPitch, data.data() + 47, sizeof(std::int16_t));
+			std::memcpy(&currentGpsData.imuYaw, data.data() + 49, sizeof(std::uint16_t));
+			currentGpsData.isValid = true;
+		}
 	};
 	udpConnections->set_packet_handler(packetHandler);
 	udpConnections->open();
@@ -337,6 +453,12 @@ bool Application::update()
 		speedMessagesInterface->update();
 	if (nmea2000MessageInterface)
 		nmea2000MessageInterface->update();
+
+	// Log data frame if data logger is enabled
+	if (dataLogger && dataLogger->isEnabled())
+	{
+		dataLogger->logDataFrame(currentGpsData, tcServer->get_clients());
+	}
 
 	// Send section control heartbeat to AOG every 100ms (PGN 0xF0, source 0x80)
 	// When no clients with sections, send 0 sections as heartbeat so AOG knows TC is alive
@@ -470,6 +592,10 @@ void Application::send_task_controller_status_message()
 
 void Application::stop()
 {
+	if (dataLogger)
+	{
+		dataLogger->shutdown();
+	}
 	tcServer->terminate();
 	isobus::CANHardwareInterface::stop();
 }

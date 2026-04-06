@@ -16,6 +16,7 @@
 #include "isobus/isobus/isobus_speed_distance_messages.hpp"
 #include "isobus/isobus/nmea2000_message_interface.hpp"
 
+#include "data_logger.hpp"
 #include "logging_utils.hpp"
 #include "settings.hpp"
 #include "task_controller.hpp"
@@ -49,4 +50,8 @@ private:
 	std::uint32_t lastTCStatusTransmit = 0;
 	std::int32_t lastSpeedValue = 0;
 	bool taskTotalsActive = true;
+
+	// GPS data for logging
+	GpsData currentGpsData;
+	std::shared_ptr<DataLogger> dataLogger;
 };

@@ -42,7 +42,7 @@ One of the available options is the `tecuEnabled` flag:
 - **Key:** `tecuEnabled`
 - **Default:** `true`
 - **Description:** Enables communication with the Tractor ECU (TECU) over ISOBUS/CAN.
-- **When to disable:** Set to `false` if your tractor or simulator does not provide TECU messages, if you do not need TECU-related data, or if you are troubleshooting TECU-related issues on the CAN bus.
+- **When to disable:** Normally leave this set to `true`. Set to `false` if there is already a real tractor TECU present on the ISOBUS/CAN bus and you need to avoid duplicate TECU messages or bus conflicts, or if you are specifically troubleshooting TECU-related issues and want this application to temporarily stop acting as a TECU.
 
 Example `settings.json` snippet:
 

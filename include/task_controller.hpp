@@ -57,6 +57,11 @@ public:
 	void set_element_work_state(std::uint16_t elementNumber, bool isWorking);
 	bool try_get_element_work_state(std::uint16_t elementNumber, bool &isWorking) const;
 
+	// DDI value storage for data logging
+	void set_ddi_value(std::uint16_t ddi, std::uint16_t elementNumber, std::int32_t value);
+	bool get_ddi_value(std::uint16_t ddi, std::uint16_t elementNumber, std::int32_t &value) const;
+	std::map<std::pair<std::uint16_t, std::uint16_t>, std::int32_t> get_all_ddi_values() const;
+
 private:
 	isobus::DeviceDescriptorObjectPool pool; ///< The device descriptor object pool (DDOP) for the TC
 	bool areMeasurementCommandsSent = false; ///< Whether or not the measurement commands have been sent
@@ -70,6 +75,7 @@ private:
 	bool actualWorkState = false; ///< The overall work state actual
 	std::map<std::uint16_t, bool> elementWorkStates; ///< Work state per element (element number -> is working)
 	bool isSectionControlEnabled = false; ///< Stores auto vs manual mode setting
+	std::map<std::pair<std::uint16_t, std::uint16_t>, std::int32_t> ddiValues; ///< DDI values: (DDI, elementNumber) -> value
 };
 
 // Create the task controller server object, this will handle all the ISOBUS communication for us

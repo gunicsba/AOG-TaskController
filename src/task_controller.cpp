@@ -244,6 +244,27 @@ bool ClientState::try_get_element_work_state(std::uint16_t elementNumber, bool &
 	return false;
 }
 
+void ClientState::set_ddi_value(std::uint16_t ddi, std::uint16_t elementNumber, std::int32_t value)
+{
+	ddiValues[{ ddi, elementNumber }] = value;
+}
+
+bool ClientState::get_ddi_value(std::uint16_t ddi, std::uint16_t elementNumber, std::int32_t &value) const
+{
+	auto it = ddiValues.find({ ddi, elementNumber });
+	if (it != ddiValues.end())
+	{
+		value = it->second;
+		return true;
+	}
+	return false;
+}
+
+std::map<std::pair<std::uint16_t, std::uint16_t>, std::int32_t> ClientState::get_all_ddi_values() const
+{
+	return ddiValues;
+}
+
 MyTCServer::MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internalControlFunction) :
   TaskControllerServer(internalControlFunction,
                        1, // AOG limits to 1 boom
@@ -435,6 +456,40 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
                                   std::int32_t processDataValue,
                                   std::uint8_t &errorCodes)
 {
+	// Handle DDI values for data logging first (before switch to catch all)
+	// DDI 1, 2 - Application rates
+	// DDI 12 - Population
+	// DDI 160, 161 - Blockage
+	// DDI 415, 417, 419 - Seed quality
+	if (dataDescriptionIndex == 1 || dataDescriptionIndex == 2 ||
+	    dataDescriptionIndex == 12 ||
+	    dataDescriptionIndex == 160 || dataDescriptionIndex == 161 ||
+	    dataDescriptionIndex == 415 || dataDescriptionIndex == 417 || dataDescriptionIndex == 419)
+	{
+		clients[partner].set_ddi_value(dataDescriptionIndex, elementNumber, processDataValue);
+
+		// Log specific DDI values
+		switch (dataDescriptionIndex)
+		{
+			case 12:
+				std::cout << "[" << get_timestamp() << "] [TC Server] Population rate (DDI 12): " << processDataValue << " for element " << elementNumber << std::endl;
+				break;
+			case 160:
+			case 161:
+				std::cout << "[" << get_timestamp() << "] [TC Server] Blockage state (DDI " << dataDescriptionIndex << "): " << processDataValue << " for element " << elementNumber << std::endl;
+				break;
+			case 415:
+				std::cout << "[" << get_timestamp() << "] [TC Server] Singulation (DDI 415): " << processDataValue << "% for element " << elementNumber << std::endl;
+				break;
+			case 417:
+				std::cout << "[" << get_timestamp() << "] [TC Server] Skip % (DDI 417): " << processDataValue << "% for element " << elementNumber << std::endl;
+				break;
+			case 419:
+				std::cout << "[" << get_timestamp() << "] [TC Server] Multiple % (DDI 419): " << processDataValue << "% for element " << elementNumber << std::endl;
+				break;
+		}
+	}
+
 	switch (dataDescriptionIndex)
 	{
 		case static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualCondensedWorkState1_16):
@@ -475,7 +530,9 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
 		{
 			// Store the work state per element rather than globally
 			clients[partner].set_element_work_state(elementNumber, processDataValue == 1);
+			clients[partner].set_ddi_value(dataDescriptionIndex, elementNumber, processDataValue);
 		}
+		break;
 	}
 
 	return true;
@@ -588,6 +645,56 @@ void MyTCServer::request_measurement_commands()
 										{
 											std::cout << "Mapped (no OnChange) DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") to element "
 											          << elementObject->get_element_number() << std::endl;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Find all blockage/planter monitoring DDIs and request them to trigger "On Change"
+			for (std::uint32_t i = 0; i < client.second.get_pool().size(); i++)
+			{
+				auto object = client.second.get_pool().get_object_by_index(i);
+				if (object->get_object_type() == isobus::task_controller_object::ObjectTypes::DeviceProcessData)
+				{
+					auto processDataObject = std::dynamic_pointer_cast<isobus::task_controller_object::DeviceProcessDataObject>(object);
+					std::uint16_t ddi = processDataObject->get_ddi();
+
+					// Check for blockage and planter monitoring DDIs
+					if (ddi == 160 || ddi == 161 || // Blockage State
+					    ddi == 12 || // DDI 12 - Population
+					    ddi == 415 || // Seed Singulation Percentage
+					    ddi == 417 || // Seed Skip Percentage
+					    ddi == 419) // Seed Multiple Percentage
+					{
+						// Loop over all objects to find the elements that are the parents
+						for (std::uint32_t j = 0; j < client.second.get_pool().size(); j++)
+						{
+							auto parentObject = client.second.get_pool().get_object_by_index(j);
+							if (parentObject->get_object_type() == isobus::task_controller_object::ObjectTypes::DeviceElement)
+							{
+								auto elementObject = std::dynamic_pointer_cast<isobus::task_controller_object::DeviceElementObject>(parentObject);
+								for (std::uint16_t elementObjectChild : elementObject->get_child_object_ids())
+								{
+									if (elementObjectChild == processDataObject->get_object_id())
+									{
+										client.second.set_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(ddi), elementObject->get_element_number());
+										const auto &entryB = isobus::DataDictionary::get_entry(ddi);
+
+										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
+										{
+											send_change_threshold_measurement_command(client.first, ddi, elementObject->get_element_number(), 1);
+											std::cout << "Subscribed (OnChange) to DDI " << ddi << " (" << entryB.to_string() << ") for element "
+											          << elementObject->get_element_number() << std::endl;
+										}
+										if (ddi == 12 &&
+										    processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::TimeInterval))
+										{
+											// Also subscribe to population rate with time interval for periodic updates
+											send_time_interval_measurement_command(client.first, ddi, elementObject->get_element_number(), 1000);
 										}
 									}
 								}
