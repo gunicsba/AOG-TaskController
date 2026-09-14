@@ -1,12 +1,9 @@
 #include "isobus/isobus/can_stack_logger.hpp"
+#include "logging_utils.hpp"
 
-#include <iostream>
-
-#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <settings.hpp>
-#include <string>
 
 class TeeStreambuf : public std::streambuf
 {
@@ -53,9 +50,14 @@ static void setup_file_logging()
 	// Generate timestamped filename
 	std::time_t now = std::time(nullptr);
 	std::tm localTime;
-	localtime_s(&localTime, &now); // Thread-safe localtime
+#if defined(_WIN32)
+	localtime_s(&localTime, &now); // Thread-safe localtime (Windows)
+#else
+	localtime_r(&now, &localTime); // Thread-safe localtime (POSIX)
+#endif
 
-	std::string logFilename = "logs\\AOG-TaskController_" +
+	// Use a forward slash; Settings::get_filename_path will create the directory.
+	std::string logFilename = std::string("logs/AOG-TaskController_") +
 	  std::to_string(localTime.tm_year + 1900) + "-" +
 	  std::to_string(localTime.tm_mon + 1) + "-" +
 	  std::to_string(localTime.tm_mday) + "_" +
@@ -74,6 +76,7 @@ public:
 
 	void sink_CAN_stack_log(CANStackLogger::LoggingLevel level, const std::string &text) override
 	{
+		std::cout << "[" << get_timestamp() << "] ";
 		switch (level)
 		{
 			case LoggingLevel::Debug:
