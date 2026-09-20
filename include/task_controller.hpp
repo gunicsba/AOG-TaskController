@@ -145,6 +145,10 @@ public:
 	/// @param[out] result The outcome of the finished snapshot, only set when this returns true
 	bool poll_hydration_snapshot(ddop_hydration::SnapshotResult &result);
 
+	/// @brief Sends GNSS quality (DDI 514) to every client that declares that DDI.
+	/// @param quality NMEA 2000 GNSS Method: 0=No GNSS, 1=GNSS, 2=DGNSS, 3=Precise, 4=RTK Fixed, 5=RTK Float, 6=Estimated, 7=Manual, 8=Simulated
+	void send_gnss_quality(std::uint8_t quality);
+
 private:
 	struct PendingHydration
 	{
