@@ -146,7 +146,7 @@ endif()
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin COMPONENT applications)
 
-option(AOG_TC_BUILD_TESTS "Build and register the unit tests" ON)
+option(AOG_TC_BUILD_TESTS "Build and register the unit tests and hardware-independent regression tests" ON)
 if(AOG_TC_BUILD_TESTS)
   enable_testing()
   add_executable(
@@ -340,6 +340,11 @@ if(WIN32)
     FILES ${CMAKE_CURRENT_LIST_DIR}/lib/Usbcan64.dll
     DESTINATION bin
     COMPONENT applications)
+endif()
+
+if(AOG_TC_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})

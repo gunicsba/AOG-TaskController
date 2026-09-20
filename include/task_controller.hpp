@@ -23,6 +23,8 @@
 #include <optional>
 #include <queue>
 #include <string>
+#include "measurement_subscription_queue.hpp"
+#include "section_work_state_feedback.hpp"
 
 constexpr std::uint8_t NUMBER_SECTIONS_PER_CONDENSED_MESSAGE = 16;
 
@@ -47,6 +49,7 @@ enum class TrackControlLevel : std::uint8_t
 class ClientState
 {
 public:
+	void configure_actual_work_state_feedback();
 	void set_number_of_sections(std::uint8_t number);
 	void set_section_setpoint_state(std::uint8_t section, std::uint8_t state);
 	void set_section_actual_state(std::uint8_t section, std::uint8_t state);
@@ -70,6 +73,10 @@ public:
 	isobus::DeviceDescriptorObjectPool &get_pool();
 	bool are_measurement_commands_sent() const;
 	void mark_measurement_commands_sent();
+	MeasurementSubscriptionQueue &get_measurement_subscriptions()
+	{
+		return measurementSubscriptions;
+	}
 	std::uint16_t get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
 	bool has_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
@@ -100,6 +107,8 @@ public:
 	void set_track_negotiation_complete(bool complete);
 
 private:
+	MeasurementSubscriptionQueue measurementSubscriptions;
+	SectionWorkStateFeedback workStateFeedback;
 	isobus::DeviceDescriptorObjectPool pool; ///< The device descriptor object pool (DDOP) for the TC
 	std::shared_ptr<const std::vector<std::vector<std::uint8_t>>> canonicalPoolChunks; ///< The DDOP exactly as uploaded, shared so get_clients() copies stay cheap
 	std::string canonicalFileStem; ///< "<NAME>/<label>"; the canonical pool is stored as "<stem>.ddop"

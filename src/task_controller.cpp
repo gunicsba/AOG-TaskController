@@ -119,6 +119,7 @@ void ClientState::set_section_actual_state(std::uint8_t section, std::uint8_t st
 {
 	if (section < numberOfSections)
 	{
+		workStateFeedback.mark_direct_state(section);
 		sectionActualStates[section] = state;
 	}
 }
@@ -180,6 +181,10 @@ std::uint8_t ClientState::get_section_actual_state(std::uint8_t section) const
 		}
 
 		// For modern/old devices using condensed DDIs, check parent hierarchy
+		if (auto feedback = workStateFeedback.get(section, isobus::SystemTiming::get_timestamp_ms()))
+		{
+			return *feedback;
+		}
 		std::uint16_t elementNumber = get_element_number_for_section(section);
 		if (is_element_or_parent_off(elementNumber))
 		{
@@ -403,6 +408,12 @@ bool ClientState::is_element_or_parent_off(std::uint16_t elementNumber) const
 void ClientState::set_element_work_state(std::uint16_t elementNumber, bool isWorking)
 {
 	elementWorkStates[elementNumber] = isWorking;
+	workStateFeedback.update(elementNumber, isWorking, isobus::SystemTiming::get_timestamp_ms());
+}
+
+void ClientState::configure_actual_work_state_feedback()
+{
+	workStateFeedback.configure(pool, sectionToElementNumber);
 }
 
 bool ClientState::try_get_element_work_state(std::uint16_t elementNumber, bool &isWorking) const
@@ -625,6 +636,8 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 			state.set_element_number_for_section(i, sectionElementNumbers[i]);
 		}
 
+		state.configure_actual_work_state_feedback();
+
 		// Scan the DDOP to determine which section control method the device supports
 		bool hasCondensedSetpoint = false; // Modern: DDI 290+ (paired with DDI 289 for global work state)
 		bool hasSettableCondensedActual = false; // Old: DDI 161+ settable
@@ -778,7 +791,15 @@ void MyTCServer::on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunc
                                              ProcessDataCommands processDataCommand)
 {
 	// This callback lets you know when a client sends a process data acknowledge (PDACK) message to you
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
 	std::cout << "[" << get_timestamp() << "] Received process data acknowledge from client " << int(partner->get_address()) << " for DDI " << dataDescriptionIndex << " element " << elementNumber << " with error codes " << std::bitset<8>(errorCodesFromClient) << " and command " << static_cast<int>(processDataCommand) << std::endl;
+	auto client = clients.find(partner);
+	if (errorCodesFromClient != 0 && client != clients.end())
+	{
+		bool queued = client->second.get_measurement_subscriptions().rejected(dataDescriptionIndex, elementNumber);
+		std::cout << "[" << get_timestamp() << "] [Measurements] Negative PDACK for DDI " << dataDescriptionIndex
+		          << " element " << elementNumber << (queued ? ": bounded retry queued" : ": no eligible subscription retry") << std::endl;
+	}
 }
 
 bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
@@ -797,6 +818,9 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
 		clientIt->second.get_shadow_values().record(objectID, processDataValue);
 	}
 
+	auto client = clients.find(partner);
+	if (client != clients.end())
+		client->second.get_measurement_subscriptions().received(dataDescriptionIndex, elementNumber);
 	switch (dataDescriptionIndex)
 	{
 		case static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualCondensedWorkState1_16):
@@ -1066,6 +1090,8 @@ void MyTCServer::request_measurement_commands()
 		// Skip clients with 0 sections (e.g. tractors) - sending measurement commands to a tractor ECU can cause unexpected behavior
 		if (!client.second.are_measurement_commands_sent() && client.second.get_number_of_sections() > 0)
 		{
+			auto &subscriptions = client.second.get_measurement_subscriptions();
+			subscriptions.initialize(isobus::SystemTiming::get_timestamp_ms());
 			// Find all actual (condensed) work state DDIs and request them to trigger "On Change" and "Time Interval"
 			for (std::uint32_t i = 0; i < client.second.get_pool().size(); i++)
 			{
@@ -1098,13 +1124,13 @@ void MyTCServer::request_measurement_commands()
 
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
 										{
-											send_change_threshold_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1);
-											std::cout << "Subscribed (OnChange) to DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
+											subscriptions.add(processDataObject->get_ddi(), elementObject->get_element_number(), MeasurementSubscriptionQueue::Trigger::OnChange);
+											std::cout << "Queued (OnChange) for DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
 											          << elementObject->get_element_number() << std::endl;
 										}
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::TimeInterval))
 										{
-											send_time_interval_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1000);
+											subscriptions.add(processDataObject->get_ddi(), elementObject->get_element_number(), MeasurementSubscriptionQueue::Trigger::TimeInterval);
 										}
 									}
 								}
@@ -1143,8 +1169,8 @@ void MyTCServer::request_measurement_commands()
 
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
 										{
-											send_change_threshold_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1);
-											std::cout << "Subscribed (OnChange) to DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
+											subscriptions.add(processDataObject->get_ddi(), elementObject->get_element_number(), MeasurementSubscriptionQueue::Trigger::OnChange);
+											std::cout << "Queued (OnChange) for DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
 											          << elementObject->get_element_number() << std::endl;
 										}
 										else
@@ -1218,8 +1244,8 @@ void MyTCServer::request_measurement_commands()
 				client.second.set_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(ddi), elementNumber);
 				if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
 				{
-					send_change_threshold_measurement_command(client.first, ddi, elementNumber, 1);
-					std::cout << "Subscribed (OnChange) to DDI " << ddi << " (" << entry.to_string() << ") for element " << elementNumber << std::endl;
+					subscriptions.add(ddi, elementNumber, MeasurementSubscriptionQueue::Trigger::OnChange);
+					std::cout << "Queued (OnChange) for DDI " << ddi << " (" << entry.to_string() << ") for element " << elementNumber << std::endl;
 				}
 				else
 				{
@@ -1227,8 +1253,17 @@ void MyTCServer::request_measurement_commands()
 				}
 			}
 
-			std::cout << "[" << get_timestamp() << "] Measurement commands sent." << std::endl;
+			std::cout << "[" << get_timestamp() << "] Measurement subscriptions queued (1s initial delay, 100ms spacing)." << std::endl;
 			client.second.mark_measurement_commands_sent();
+		}
+		auto &subscriptions = client.second.get_measurement_subscriptions();
+		if (auto command = subscriptions.next(isobus::SystemTiming::get_timestamp_ms()))
+		{
+			bool sent = command->trigger == MeasurementSubscriptionQueue::Trigger::OnChange ? send_change_threshold_measurement_command(client.first, command->ddi, command->element, 1) : send_time_interval_measurement_command(client.first, command->ddi, command->element, 1000);
+			if (!sent)
+				subscriptions.send_failed(*command);
+			std::cout << "[" << get_timestamp() << "] [Measurements] DDI " << command->ddi << " element " << command->element
+			          << " attempt " << command->attempts << (sent ? " sent" : " send failed") << std::endl;
 		}
 	}
 }
