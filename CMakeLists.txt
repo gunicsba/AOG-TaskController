@@ -149,10 +149,12 @@ install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin COMPONENT applications)
 option(AOG_TC_BUILD_TESTS "Build and register the unit tests and hardware-independent regression tests" ON)
 if(AOG_TC_BUILD_TESTS)
   enable_testing()
+  find_package(Threads REQUIRED)
   add_executable(
     ddop_hydration_test
     ${CMAKE_CURRENT_LIST_DIR}/tools/ddop_hydration_test.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/ddop_hydration.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/async_log.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/settings.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/logging.cpp)
   target_compile_features(ddop_hydration_test PRIVATE cxx_std_20)
@@ -164,7 +166,7 @@ if(AOG_TC_BUILD_TESTS)
                                 PROJECT_NAME="${PROJECT_NAME}")
   target_link_libraries(
     ddop_hydration_test PRIVATE isobus::Isobus isobus::Utility
-                                nlohmann_json::nlohmann_json)
+                                nlohmann_json::nlohmann_json Threads::Threads)
   add_test(NAME ddop_hydration_snapshot COMMAND ddop_hydration_test)
 endif()
 
