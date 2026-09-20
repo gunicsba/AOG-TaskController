@@ -69,6 +69,7 @@ private:
 	void setup_vt_client();
 	void update_vt_client();
 	void try_start_vt_client();
+	void nudge_offline_vt();
 	void handle_vt_disconnected();
 	void log_vt_capabilities_once();
 	void sync_vt_config_once();
@@ -114,6 +115,10 @@ private:
 	std::unique_ptr<isobus::VirtualTerminalClientUpdateHelper> vtUpdateHelper;
 	std::vector<std::uint8_t> vtObjectPool;
 	bool vtClientStarted = false;
+	static constexpr std::uint32_t VT_NUDGE_INTERVAL_MS = 3000; ///< Spacing between address claim requests while the VT is offline
+	static constexpr std::uint8_t VT_NUDGE_MAX_ATTEMPTS = 10; ///< Give up (until the VT is seen again) after this many requests
+	std::uint32_t vtNudgeLastMs = 0; ///< When the VT was last seen offline / last nudged, 0 while it is online
+	std::uint8_t vtNudgeCount = 0;
 	bool canHardwareStarted = false; ///< CANHardwareInterface::start() succeeded, so stop() has a thread to stop
 	bool vtConfigSynced = false;
 	bool vtWasConnected = false;

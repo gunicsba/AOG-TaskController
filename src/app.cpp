@@ -1597,8 +1597,48 @@ void Application::update_vt_section_map()
 	}
 }
 
+void Application::nudge_offline_vt()
+{
+	// The network manager marks an external control function offline when it doesn't re-claim its
+	// address within ~755 ms of a global request for address claim (seen at every startup: the
+	// VT is pruned ~230 ms after the VT client attaches), and only brings it back when that device
+	// claims again. A VT that misses the window then stays "offline" until it is power cycled, so
+	// ask for a fresh claim a few times. The library asks for sparing use, hence the small cap.
+	auto vtPartner = vtClient->get_partner_control_function();
+	if (vtPartner && vtPartner->get_address_valid())
+	{
+		vtNudgeLastMs = 0;
+		vtNudgeCount = 0;
+		return;
+	}
+
+	if (vtNudgeCount >= VT_NUDGE_MAX_ATTEMPTS)
+	{
+		return;
+	}
+
+	if (0 == vtNudgeLastMs)
+	{
+		vtNudgeLastMs = isobus::SystemTiming::get_timestamp_ms(); // grace period before the first request
+		return;
+	}
+
+	if (!isobus::SystemTiming::time_expired_ms(vtNudgeLastMs, VT_NUDGE_INTERVAL_MS))
+	{
+		return;
+	}
+
+	vtNudgeLastMs = isobus::SystemTiming::get_timestamp_ms();
+	++vtNudgeCount;
+	const bool sent = isobus::CANNetworkManager::CANNetwork.send_request_for_address_claim(0);
+	log("VT") << "VT is offline; requested an address claim from the bus (" << static_cast<int>(vtNudgeCount) << "/"
+	          << static_cast<int>(VT_NUDGE_MAX_ATTEMPTS) << (sent ? ")" : ", send failed)") << std::endl;
+}
+
 void Application::update_vt_client()
 {
+	nudge_offline_vt();
+
 	if (!vtClientStarted)
 	{
 		try_start_vt_client();
