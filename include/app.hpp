@@ -115,6 +115,11 @@ private:
 	std::unique_ptr<isobus::VirtualTerminalClientUpdateHelper> vtUpdateHelper;
 	std::vector<std::uint8_t> vtObjectPool;
 	bool vtClientStarted = false;
+	/// The isobus network manager marks external control functions offline 755 ms after a global address
+	/// claim request unless they claimed since; 250 ms of margin covers the delay between creating an
+	/// internal control function and its request reaching the bus.
+	static constexpr std::uint32_t ADDRESS_CLAIM_SETTLE_MS = 1250;
+	std::uint32_t lastInternalCfCreatedMs = 0; ///< When the last internal control function (whose creation sends an address claim request) was created
 	static constexpr std::uint32_t VT_NUDGE_INTERVAL_MS = 3000; ///< Spacing between address claim requests while the VT is offline
 	static constexpr std::uint8_t VT_NUDGE_MAX_ATTEMPTS = 10; ///< Give up (until the VT is seen again) after this many requests
 	std::uint32_t vtNudgeLastMs = 0; ///< When the VT was last seen offline / last nudged, 0 while it is online
@@ -128,6 +133,8 @@ private:
 	std::uint8_t nmea2000SequenceIdentifier = 0;
 	std::uint32_t lastJ1939SpeedTransmit = 0;
 	std::uint32_t lastTCStatusTransmit = 0;
+	static constexpr std::uint32_t TC_STATUS_STARTUP_DELAY_MS = 6000; ///< ISO 11783-10 6.6.1: TC waits 6 s after its address claim before sending TC Status
+	std::uint32_t tcAddressClaimedMs = 0; ///< When the TC's address claim completed, 0 = not yet
 	std::int32_t lastSpeedValue = 0;
 	std::int32_t lastXteValue = 0;
 	std::uint8_t gnssFixQuality = 0; ///< AOG fix quality (NMEA 2000 GNSS Method): 0=invalid, 1=GPS, 2=DGPS, 3=PPS, 4=RTK Fix, 5=Float, 6=Estimated, 7=Manual, 8=Simulated

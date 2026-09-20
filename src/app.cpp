@@ -341,6 +341,7 @@ bool Application::setup_control_functions()
 
 	log("Init") << "Creating Task Controller control function..." << std::endl;
 	tcCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tcNAME, 0, isobus::preferred_addresses::IndustryGroup2::TaskController_MappingComputer); // The preferred address for a TC is defined in ISO 11783
+	lastInternalCfCreatedMs = isobus::SystemTiming::get_timestamp_ms();
 
 	// Wait for TC address claim with bounded wait loop (no async to avoid blocking on destruction)
 	// Also implements minimum 250ms delay per J1939-81 section 4.4.4.1
@@ -369,6 +370,7 @@ bool Application::setup_control_functions()
 
 	// Record when the address was actually claimed for the 250ms delay calculation
 	auto tcAddressClaimedTime = isobus::SystemTiming::get_timestamp_ms();
+	tcAddressClaimedMs = tcAddressClaimedTime;
 	log("Init") << "TC claimed address " << static_cast<int>(tcCF->get_address()) << std::endl;
 
 	// Ensure minimum 250ms delay after address claim per J1939-81
@@ -393,6 +395,7 @@ bool Application::setup_control_functions()
 	{ // Only create TECU if TC was created and ECU is enabled
 		log("Init") << "Creating Tractor ECU control function..." << std::endl;
 		tecuCF = isobus::CANNetworkManager::CANNetwork.create_internal_control_function(tecuNAME, 0, isobus::preferred_addresses::IndustryGroup2::TractorECU);
+		lastInternalCfCreatedMs = isobus::SystemTiming::get_timestamp_ms();
 
 		// Wait for TECU address claim with minimum 250ms delay per J1939-81 section 4.4.4.1
 		log("Init") << "Tractor ECU control function created, waiting for address claim..." << std::endl;
@@ -1087,7 +1090,11 @@ bool Application::update()
 			lastLateWarningMs = isobus::SystemTiming::get_timestamp_ms();
 		}
 	}
-	if (isobus::SystemTiming::time_expired_ms(lastTCStatusTransmit, 2000) && tcCF && tcCF->get_address_valid())
+	// ISO 11783-10 6.6.1: the TC waits 6 s after completing the address claim before it begins
+	// transmitting the Task Controller Status message, which clients wait for before connecting.
+	const bool tcStartupDelayElapsed = (0 != tcAddressClaimedMs) &&
+	  isobus::SystemTiming::time_expired_ms(tcAddressClaimedMs, TC_STATUS_STARTUP_DELAY_MS);
+	if (tcStartupDelayElapsed && isobus::SystemTiming::time_expired_ms(lastTCStatusTransmit, 2000) && tcCF && tcCF->get_address_valid())
 	{
 		static bool firstStatusSent = false;
 		send_task_controller_status_message();
@@ -1348,6 +1355,15 @@ void Application::setup_vt_client()
 {
 	vtObjectPool.assign(std::begin(AOG_TC_IOP_DATA), std::end(AOG_TC_IOP_DATA));
 	log("VT") << "Loaded embedded object pool (" << vtObjectPool.size() << " bytes)" << std::endl;
+
+	// Creating a partnered control function while the network manager's prune timer for the last
+	// address claim request is still pending gets the partner marked stale: a VT that already
+	// claimed its address before the partner object existed is declared offline ~755 ms after
+	// that request, although it answered in time. Wait the window out before creating it.
+	while (!isobus::SystemTiming::time_expired_ms(lastInternalCfCreatedMs, ADDRESS_CLAIM_SETTLE_MS))
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
 
 	// Partner filter for any Virtual Terminal server on the bus.
 	const isobus::NAMEFilter filterVirtualTerminal(isobus::NAME::NAMEParameters::FunctionCode, static_cast<std::uint8_t>(isobus::NAME::Function::VirtualTerminal));
