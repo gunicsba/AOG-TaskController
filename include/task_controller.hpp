@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "ddop_hydration.hpp"
+#include "guidance_track_context.hpp"
 #include "isobus/isobus/isobus_data_dictionary.hpp"
 #include "isobus/isobus/isobus_device_descriptor_object_pool.hpp"
 #include "isobus/isobus/isobus_standard_data_description_indices.hpp"
@@ -16,8 +18,13 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <queue>
+#include <string>
+#include "measurement_subscription_queue.hpp"
+#include "section_work_state_feedback.hpp"
 
 constexpr std::uint8_t NUMBER_SECTIONS_PER_CONDENSED_MESSAGE = 16;
 
@@ -29,9 +36,20 @@ enum SectionState : std::uint8_t
 	NOT_INSTALLED = 3 ///< Section is not installed
 };
 
+/// @brief Track control levels, as the bits an implement sets in DDI 505 for the levels it supports.
+/// Only Level 1 is implemented by the TC.
+enum class TrackControlLevel : std::uint8_t
+{
+	None = 0,
+	Level1 = 1,
+	Level2 = 2,
+	Level3 = 4
+};
+
 class ClientState
 {
 public:
+	void configure_actual_work_state_feedback();
 	void set_number_of_sections(std::uint8_t number);
 	void set_section_setpoint_state(std::uint8_t section, std::uint8_t state);
 	void set_section_actual_state(std::uint8_t section, std::uint8_t state);
@@ -55,6 +73,10 @@ public:
 	isobus::DeviceDescriptorObjectPool &get_pool();
 	bool are_measurement_commands_sent() const;
 	void mark_measurement_commands_sent();
+	MeasurementSubscriptionQueue &get_measurement_subscriptions()
+	{
+		return measurementSubscriptions;
+	}
 	std::uint16_t get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
 	void set_element_number_for_ddi(isobus::DataDescriptionIndex ddi, std::uint16_t elementNumber);
 	bool has_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const;
@@ -62,9 +84,36 @@ public:
 	// Element work state management these act like master / override for actual sections
 	void set_element_work_state(std::uint16_t elementNumber, bool isWorking);
 	bool try_get_element_work_state(std::uint16_t elementNumber, bool &isWorking) const;
+	// Hydrated DDOP snapshot support, see ddop_hydration.hpp
+	void set_canonical_pool(std::vector<std::vector<std::uint8_t>> chunks, std::string fileStem);
+	const std::vector<std::vector<std::uint8_t>> &get_canonical_pool_chunks() const;
+	const std::string &get_canonical_file_stem() const;
+	ddop_hydration::ProcessDataIndex &get_process_data_index();
+	ddop_hydration::ShadowValueStore &get_shadow_values();
+
+	/// @brief Advances the DDI 507 sequence number if the track or reference line differs from the
+	/// last one announced to this client, and remembers the new values.
+	/// @returns The sequence number to announce.
+	std::uint32_t update_guidance_track_sequence(std::int32_t trackNumber, std::uint32_t referenceLineId);
+
+	// Track control level negotiation. The implement reports the levels it supports in DDI 505,
+	// the TC answers by writing the level it wants to use to DDI 506, and the implement's echo of
+	// that completes the negotiation.
+	int get_supported_track_control_levels() const;
+	void set_supported_track_control_levels(int levels);
+	bool is_track_control_level_sent() const;
+	void set_track_control_level_sent(bool sent);
+	bool is_track_negotiation_complete() const;
+	void set_track_negotiation_complete(bool complete);
 
 private:
+	MeasurementSubscriptionQueue measurementSubscriptions;
+	SectionWorkStateFeedback workStateFeedback;
 	isobus::DeviceDescriptorObjectPool pool; ///< The device descriptor object pool (DDOP) for the TC
+	std::shared_ptr<const std::vector<std::vector<std::uint8_t>>> canonicalPoolChunks; ///< The DDOP exactly as uploaded, shared so get_clients() copies stay cheap
+	std::string canonicalFileStem; ///< "<NAME>/<label>"; the canonical pool is stored as "<stem>.ddop"
+	ddop_hydration::ProcessDataIndex processDataIndex; ///< (DDI, element number) -> object ID
+	ddop_hydration::ShadowValueStore shadowValues; ///< Latest reported process data values by object ID
 	bool areMeasurementCommandsSent = false; ///< Whether or not the measurement commands have been sent
 	std::map<isobus::DataDescriptionIndex, std::uint16_t> ddiToElementNumber; ///< Mapping of DDI to element number // TODO: better way to do this?
 
@@ -79,6 +128,12 @@ private:
 	bool isSectionControlEnabled = false; ///< Stores auto vs manual mode setting
 	bool usesPerElementControl = false; ///< Legacy mode: use per-element setpoint instead of condensed
 	std::uint16_t perElementSetpointDDI = 0; ///< The DDI to use for per-element setpoints (289 or 141), 0 if not applicable
+	std::int32_t lastSentTrackNumber = 0; ///< Last track number announced, for DDI 507 change detection
+	std::uint32_t lastSentReferenceLineId = 0; ///< Last reference line ID announced, for DDI 507 change detection
+	std::uint32_t guidanceTrackSequenceNumber = 0; ///< Per-client DDI 507 sequence number
+	int supportedTrackControlLevels = 0; ///< Raw DDI 505 bitmask from the implement (bit 0 = Level 1, bit 1 = Level 2, bit 2 = Level 3)
+	bool trackControlLevelSent = false; ///< Whether DDI 506 has been written
+	bool trackNegotiationComplete = false; ///< Whether the implement confirmed the level written to DDI 506
 };
 
 // Create the task controller server object, this will handle all the ISOBUS communication for us
@@ -116,13 +171,55 @@ public:
 	void update_section_states(std::vector<bool> &sectionStates);
 	void update_section_control_enabled(bool enabled);
 
+	enum class HydrationStartResult
+	{
+		Started,
+		AlreadyRunning,
+		UnknownClient
+	};
+
+	/// @brief Starts a hydrated DDOP snapshot for a client. Sends value requests for hydratable
+	/// objects without a known value; does not block. Finish it with poll_hydration_snapshot().
+	HydrationStartResult begin_hydration_snapshot(std::shared_ptr<isobus::ControlFunction> client);
+
+	/// @brief Call from the main loop. Once the request wait has elapsed, writes the snapshot and returns true.
+	/// @param[out] result The outcome of the finished snapshot, only set when this returns true
+	bool poll_hydration_snapshot(ddop_hydration::SnapshotResult &result);
+
+	/// @brief Sends GNSS quality (DDI 514) to every client that declares that DDI.
+	/// @param quality NMEA 2000 GNSS Method: 0=No GNSS, 1=GNSS, 2=DGNSS, 3=Precise, 4=RTK Fixed, 5=RTK Float, 6=Estimated, 7=Manual, 8=Simulated
+	void send_gnss_quality(std::uint8_t quality);
+
+	/// @brief Announces the current guidance track (DDI 507-511) and line deviation (DDI 513) to every
+	/// client that declares those DDIs. Does nothing while the context is not valid.
+	/// @param ctx Current guidance track state from AOG
+	/// @param lineDeviationMm Deviation from the guidance line in mm
+	void send_guidance_track_data(const GuidanceTrackContext &ctx, std::int32_t lineDeviationMm);
+
+	/// @brief Writes the track control state (DDI 515) to every client that has finished negotiating
+	/// a track control level and declares that DDI.
+	/// @param enabled true = automatic, false = manual/off
+	void update_track_control_enabled(bool enabled);
+
 private:
+	struct PendingHydration
+	{
+		std::shared_ptr<isobus::ControlFunction> client;
+		std::vector<ddop_hydration::SnapshotEntry> entries;
+		std::uint32_t startedAt_ms = 0;
+		std::uint32_t wait_ms = 0;
+	};
+
 	void send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset);
 	void send_section_control_state(std::shared_ptr<isobus::ControlFunction> client, bool enabled);
 	bool is_ddi_settable(std::shared_ptr<isobus::ControlFunction> client, std::uint16_t ddi);
 
+	/// @brief Drops DDOP chunks queued for a client but never activated. Caller must hold clientsMutex.
+	void discard_queued_pool_chunks(std::shared_ptr<isobus::ControlFunction> partnerCF, const char *reason);
+
 	std::map<std::shared_ptr<isobus::ControlFunction>, ClientState> clients;
 	std::map<std::shared_ptr<isobus::ControlFunction>, std::queue<std::vector<std::uint8_t>>> uploadedPools;
+	std::optional<PendingHydration> pendingHydration; ///< Guarded by clientsMutex
 
 	/// @brief Guards clients and uploadedPools.
 	///

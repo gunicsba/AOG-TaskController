@@ -61,8 +61,8 @@ FetchContent_MakeAvailable(Boost)
 
 FetchContent_Declare(
   isobus
-  GIT_REPOSITORY https://github.com/gunicsba/AgIsoStack-plus-plus.git
-  GIT_TAG d4d36dd6f15af6c6f6218317572025a1ffec6883
+  GIT_REPOSITORY https://github.com/Open-Agriculture/AgIsoStack-plus-plus.git
+  GIT_TAG c0e1ebb06a2ad9d5bf86c98b3d028ab8fa350130
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(isobus)
 
@@ -146,6 +146,30 @@ endif()
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin COMPONENT applications)
 
+option(AOG_TC_BUILD_TESTS "Build and register the unit tests and hardware-independent regression tests" ON)
+if(AOG_TC_BUILD_TESTS)
+  enable_testing()
+  find_package(Threads REQUIRED)
+  add_executable(
+    ddop_hydration_test
+    ${CMAKE_CURRENT_LIST_DIR}/tools/ddop_hydration_test.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/ddop_hydration.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/async_log.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/settings.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/logging.cpp)
+  target_compile_features(ddop_hydration_test PRIVATE cxx_std_20)
+  set_target_properties(ddop_hydration_test PROPERTIES CXX_EXTENSIONS OFF)
+  target_include_directories(ddop_hydration_test
+                             PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+  target_compile_definitions(
+    ddop_hydration_test PRIVATE PROJECT_VERSION="${PROJECT_VERSION}"
+                                PROJECT_NAME="${PROJECT_NAME}")
+  target_link_libraries(
+    ddop_hydration_test PRIVATE isobus::Isobus isobus::Utility
+                                nlohmann_json::nlohmann_json Threads::Threads)
+  add_test(NAME ddop_hydration_snapshot COMMAND ddop_hydration_test)
+endif()
+
 option(AOG_TC_VALIDATE_IOP "Build and register the object pool validator test"
        ON)
 if(AOG_TC_VALIDATE_IOP)
@@ -158,6 +182,20 @@ if(AOG_TC_VALIDATE_IOP)
   target_link_libraries(iop_validator PRIVATE isobus::Isobus isobus::Utility)
   add_test(NAME object_pool_attributes_in_range COMMAND iop_validator
                                                         "${AOG_TC_IOP_SOURCE}")
+
+  # GuidanceTrackProvider (AOG PGN 0xF4 parsing) unit tests. Made a dependency
+  # of iop_validator so the validation workflow, which builds only that target,
+  # also builds this test.
+  add_executable(
+    test_guidance_track
+    ${CMAKE_CURRENT_LIST_DIR}/tools/test_guidance_track.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/guidance_track_context.cpp)
+  target_compile_features(test_guidance_track PRIVATE cxx_std_20)
+  set_target_properties(test_guidance_track PROPERTIES CXX_EXTENSIONS OFF)
+  target_include_directories(test_guidance_track
+                             PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+  add_dependencies(iop_validator test_guidance_track)
+  add_test(NAME guidance_track_parsing COMMAND test_guidance_track)
 
   # A deliberately broken pool, so the suite asserts more than "today's pool
   # passes". One case per message, since a shared exit code stays green as long
@@ -180,11 +218,53 @@ if(AOG_TC_VALIDATE_IOP)
     malformed_pool_value_out_of_range PROPERTIES PASS_REGULAR_EXPRESSION
                                                  "InputBoolean value 24")
 
+  # async_log (log output off the calling thread) unit tests. Made a dependency
+  # of iop_validator so the validation workflow, which builds only that target,
+  # also builds this test.
+  add_executable(
+    test_async_log ${CMAKE_CURRENT_LIST_DIR}/tools/test_async_log.cpp
+                   ${CMAKE_CURRENT_LIST_DIR}/src/async_log.cpp)
+  target_compile_features(test_async_log PRIVATE cxx_std_20)
+  set_target_properties(test_async_log PROPERTIES CXX_EXTENSIONS OFF)
+  target_include_directories(test_async_log
+                             PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+  target_link_libraries(test_async_log PRIVATE Threads::Threads)
+  add_dependencies(iop_validator test_async_log)
+  add_test(NAME async_log COMMAND test_async_log)
+
   # PASS_REGULAR_EXPRESSION makes CTest ignore the exit code, which is the part
   # a CI gate actually reads.
   add_test(NAME malformed_pool_exit_status COMMAND iop_validator
                                                    "${AOG_TC_MALFORMED_IOP}")
   set_tests_properties(malformed_pool_exit_status PROPERTIES WILL_FAIL TRUE)
+
+  # Tractor Facilities (PGN 65033) encode/decode unit tests
+  add_executable(
+    test_tractor_facilities
+    ${CMAKE_CURRENT_LIST_DIR}/tools/test_tractor_facilities.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/tractor_facilities.cpp)
+  target_compile_features(test_tractor_facilities PRIVATE cxx_std_20)
+  set_target_properties(test_tractor_facilities PROPERTIES CXX_EXTENSIONS OFF)
+  target_include_directories(test_tractor_facilities
+                             PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+  target_link_libraries(
+    test_tractor_facilities PRIVATE isobus::Isobus isobus::HardwareIntegration
+                                    isobus::Utility)
+  add_test(NAME tractor_facilities_encode_decode
+           COMMAND test_tractor_facilities)
+endif()
+
+option(AOG_TC_RUN_UNIT_TESTS
+       "Build and register hardware-independent TC regression tests" ON)
+if(AOG_TC_RUN_UNIT_TESTS)
+  enable_testing()
+  add_executable(ddop_reupload_test
+                 ${CMAKE_CURRENT_LIST_DIR}/tools/ddop_reupload_test.cpp)
+  target_compile_features(ddop_reupload_test PRIVATE cxx_std_20)
+  set_target_properties(ddop_reupload_test PROPERTIES CXX_EXTENSIONS OFF)
+  target_link_libraries(ddop_reupload_test PRIVATE isobus::Isobus
+                                                   isobus::Utility)
+  add_test(NAME ddop_reupload COMMAND ddop_reupload_test)
 endif()
 
 if(WIN32)
@@ -262,6 +342,11 @@ if(WIN32)
     FILES ${CMAKE_CURRENT_LIST_DIR}/lib/Usbcan64.dll
     DESTINATION bin
     COMPONENT applications)
+endif()
+
+if(AOG_TC_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})

@@ -12,9 +12,11 @@
 
 #include "isobus/isobus/isobus_device_descriptor_object_pool_helpers.hpp"
 #include "isobus/isobus/isobus_task_controller_server.hpp"
+#include "isobus/utility/system_timing.hpp"
 
 #include <bitset>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <set>
 
@@ -32,6 +34,70 @@ static std::string sanitize_filename(const std::string &input)
 		}
 	}
 	return result;
+}
+
+// Finds the number of the first device element that lists the process data object as a child.
+static bool find_owning_element_number(isobus::DeviceDescriptorObjectPool &pool,
+                                       const isobus::task_controller_object::DeviceProcessDataObject &processData,
+                                       std::uint16_t &elementNumber)
+{
+	for (std::uint32_t i = 0; i < pool.size(); i++)
+	{
+		auto object = pool.get_object_by_index(i);
+		if (!object || object->get_object_type() != isobus::task_controller_object::ObjectTypes::DeviceElement)
+		{
+			continue;
+		}
+
+		auto elementObject = std::dynamic_pointer_cast<isobus::task_controller_object::DeviceElementObject>(object);
+		if (!elementObject)
+		{
+			continue;
+		}
+
+		for (std::uint16_t childId : elementObject->get_child_object_ids())
+		{
+			if (childId == processData.get_object_id())
+			{
+				elementNumber = elementObject->get_element_number();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+// The DDIs the TC pushes to implements as guidance data.
+static bool is_guidance_data_ddi(std::uint16_t ddi)
+{
+	switch (static_cast<isobus::DataDescriptionIndex>(ddi))
+	{
+		case isobus::DataDescriptionIndex::GNSSQuality:
+		case isobus::DataDescriptionIndex::GuidanceTrackSequenceNumber:
+		case isobus::DataDescriptionIndex::UniqueGuidanceReferenceLineID:
+		case isobus::DataDescriptionIndex::ActualGuidanceTrackNumber:
+		case isobus::DataDescriptionIndex::GuidanceTrackNumberToTheRight:
+		case isobus::DataDescriptionIndex::GuidanceTrackNumberToTheLeft:
+		case isobus::DataDescriptionIndex::GuidanceLineSwathWidth:
+		case isobus::DataDescriptionIndex::GuidanceLineDeviation:
+			return true;
+		default:
+			return false;
+	}
+}
+
+// The DDIs used to negotiate a track control level and report the control state.
+static bool is_track_control_ddi(std::uint16_t ddi)
+{
+	switch (static_cast<isobus::DataDescriptionIndex>(ddi))
+	{
+		case isobus::DataDescriptionIndex::SupportedTrackControlLevels:
+		case isobus::DataDescriptionIndex::SetpointTrackControlLevel:
+		case isobus::DataDescriptionIndex::TrackControlState:
+			return true;
+		default:
+			return false;
+	}
 }
 
 void ClientState::set_number_of_sections(std::uint8_t number)
@@ -54,6 +120,7 @@ void ClientState::set_section_actual_state(std::uint8_t section, std::uint8_t st
 {
 	if (section < numberOfSections)
 	{
+		workStateFeedback.mark_direct_state(section);
 		sectionActualStates[section] = state;
 	}
 }
@@ -115,6 +182,10 @@ std::uint8_t ClientState::get_section_actual_state(std::uint8_t section) const
 		}
 
 		// For modern/old devices using condensed DDIs, check parent hierarchy
+		if (auto feedback = workStateFeedback.get(section, isobus::SystemTiming::get_timestamp_ms()))
+		{
+			return *feedback;
+		}
 		std::uint16_t elementNumber = get_element_number_for_section(section);
 		if (is_element_or_parent_off(elementNumber))
 		{
@@ -202,6 +273,33 @@ void ClientState::mark_measurement_commands_sent()
 	areMeasurementCommandsSent = true;
 }
 
+void ClientState::set_canonical_pool(std::vector<std::vector<std::uint8_t>> chunks, std::string fileStem)
+{
+	canonicalPoolChunks = std::make_shared<const std::vector<std::vector<std::uint8_t>>>(std::move(chunks));
+	canonicalFileStem = std::move(fileStem);
+}
+
+const std::vector<std::vector<std::uint8_t>> &ClientState::get_canonical_pool_chunks() const
+{
+	static const std::vector<std::vector<std::uint8_t>> noChunks;
+	return canonicalPoolChunks ? *canonicalPoolChunks : noChunks;
+}
+
+const std::string &ClientState::get_canonical_file_stem() const
+{
+	return canonicalFileStem;
+}
+
+ddop_hydration::ProcessDataIndex &ClientState::get_process_data_index()
+{
+	return processDataIndex;
+}
+
+ddop_hydration::ShadowValueStore &ClientState::get_shadow_values()
+{
+	return shadowValues;
+}
+
 std::uint16_t ClientState::get_element_number_for_ddi(isobus::DataDescriptionIndex ddi) const
 {
 	auto it = ddiToElementNumber.find(ddi);
@@ -209,7 +307,7 @@ std::uint16_t ClientState::get_element_number_for_ddi(isobus::DataDescriptionInd
 	{
 		return it->second;
 	}
-	std::cout << "[" << get_timestamp() << "] Cached element number not found for DDI " << static_cast<int>(ddi) << std::endl;
+	log() << "Cached element number not found for DDI " << static_cast<int>(ddi) << std::endl;
 	return 0;
 }
 
@@ -311,6 +409,12 @@ bool ClientState::is_element_or_parent_off(std::uint16_t elementNumber) const
 void ClientState::set_element_work_state(std::uint16_t elementNumber, bool isWorking)
 {
 	elementWorkStates[elementNumber] = isWorking;
+	workStateFeedback.update(elementNumber, isWorking, isobus::SystemTiming::get_timestamp_ms());
+}
+
+void ClientState::configure_actual_work_state_feedback()
+{
+	workStateFeedback.configure(pool, sectionToElementNumber);
 }
 
 bool ClientState::try_get_element_work_state(std::uint16_t elementNumber, bool &isWorking) const
@@ -322,6 +426,48 @@ bool ClientState::try_get_element_work_state(std::uint16_t elementNumber, bool &
 		return true;
 	}
 	return false;
+}
+
+std::uint32_t ClientState::update_guidance_track_sequence(std::int32_t trackNumber, std::uint32_t referenceLineId)
+{
+	// A line switch can land on the same track index, so compare the reference line too.
+	if ((trackNumber != lastSentTrackNumber) || (referenceLineId != lastSentReferenceLineId))
+	{
+		guidanceTrackSequenceNumber++;
+		lastSentTrackNumber = trackNumber;
+		lastSentReferenceLineId = referenceLineId;
+	}
+	return guidanceTrackSequenceNumber;
+}
+
+int ClientState::get_supported_track_control_levels() const
+{
+	return supportedTrackControlLevels;
+}
+
+void ClientState::set_supported_track_control_levels(int levels)
+{
+	supportedTrackControlLevels = levels;
+}
+
+bool ClientState::is_track_control_level_sent() const
+{
+	return trackControlLevelSent;
+}
+
+void ClientState::set_track_control_level_sent(bool sent)
+{
+	trackControlLevelSent = sent;
+}
+
+bool ClientState::is_track_negotiation_complete() const
+{
+	return trackNegotiationComplete;
+}
+
+void ClientState::set_track_negotiation_complete(bool complete)
+{
+	trackNegotiationComplete = complete;
 }
 
 MyTCServer::MyTCServer(std::shared_ptr<isobus::InternalControlFunction> internalControlFunction,
@@ -364,13 +510,28 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 	// state.get_pool().set_task_controller_compatibility_level(get_active_client(partnerCF)->reportedVersion);
 	state.get_pool().set_task_controller_compatibility_level(static_cast<std::uint8_t>(TaskControllerVersion::SecondEditionDraft));
 
-	bool deserialized = false;
+	// Concatenate every queued chunk into one contiguous buffer before parsing. Each
+	// chunk here is a wire-level fragment of ONE logical pool (every chunk received since
+	// the session started, see store_device_descriptor_object_pool()); the binary DDOP format has no
+	// concept of resuming a partially-parsed object, so feeding chunks to the
+	// deserializer one at a time only works if every chunk boundary happens to fall on
+	// an object boundary. Deserializing once against the fully reassembled bytes avoids
+	// that assumption entirely.
+	std::vector<std::uint8_t> combinedPool;
+	// Also keep the wire-level chunks exactly as uploaded, for the hydration snapshot.
+	std::vector<std::vector<std::uint8_t>> canonicalPoolChunks;
 	while (!uploadedPools[partnerCF].empty())
 	{
-		auto binaryPool = uploadedPools[partnerCF].front();
+		auto &chunk = uploadedPools[partnerCF].front();
+		combinedPool.insert(combinedPool.end(), chunk.begin(), chunk.end());
+		canonicalPoolChunks.push_back(std::move(chunk));
 		uploadedPools[partnerCF].pop();
-		deserialized = state.get_pool().deserialize_binary_object_pool(binaryPool.data(), static_cast<std::uint32_t>(binaryPool.size()), partnerCF->get_NAME());
 	}
+	// deserialize_binary_object_pool() reports success on an empty buffer (nothing to
+	// parse, nothing failed) — that's not a valid activation here, so it must be excluded
+	// explicitly rather than falling into the general parse call below.
+	bool deserialized = !combinedPool.empty() &&
+	  state.get_pool().deserialize_binary_object_pool(combinedPool.data(), static_cast<std::uint32_t>(combinedPool.size()), partnerCF->get_NAME());
 	if (deserialized)
 	{
 		log() << "Successfully deserialized device descriptor object pool." << std::endl;
@@ -409,7 +570,9 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 		auto it = std::find_if(label.begin(), label.end(), [](unsigned char c) { return c < 0x20 || c >= 0x7F; });
 		label.erase(it, label.end());
 
-		auto fileName = std::to_string(partnerCF->get_NAME().get_full_name()) + "/" + sanitize_filename(label) + ".ddop";
+		const auto fileStem = std::to_string(partnerCF->get_NAME().get_full_name()) + "/" + sanitize_filename(label);
+		auto fileName = fileStem + ".ddop";
+		state.set_canonical_pool(std::move(canonicalPoolChunks), fileStem);
 		std::vector<std::uint8_t> binaryPool;
 		if (state.get_pool().generate_binary_object_pool(binaryPool))
 		{
@@ -436,34 +599,52 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 		// Build a flat list of section element numbers in the same order as the geometry enumeration
 		std::vector<std::uint16_t> sectionElementNumbers;
 
-		std::cout << "Implement geometry: " << std::endl;
-		std::cout << "Number of booms=" << implement.booms.size() << std::endl;
+		// One row per section, in the same order as sectionElementNumbers (the row index is AOG's section index)
+		struct GeometryRow
+		{
+			std::uint16_t elementNumber;
+			std::uint16_t boomElement;
+			std::string subBoomElement; // "-" for sections attached directly to a boom
+			isobus::DeviceDescriptorObjectPoolHelper::Section section;
+		};
+		std::vector<GeometryRow> geometryRows;
+
 		for (const auto &boom : implement.booms)
 		{
-			std::cout << "Boom: id=" << static_cast<int>(boom.elementNumber) << std::endl;
 			for (const auto &subBoom : boom.subBooms)
 			{
-				std::cout << "SubBoom: id=" << static_cast<int>(subBoom.elementNumber) << std::endl;
 				for (const auto &section : subBoom.sections)
 				{
 					numberOfSections++;
 					sectionElementNumbers.push_back(section.elementNumber);
-					std::cout << "Section: id=" << static_cast<int>(section.elementNumber) << std::endl;
-					std::cout << "X Offset: " << section.xOffset_mm.get() << std::endl;
-					std::cout << "Y Offset: " << section.yOffset_mm.get() << std::endl;
-					std::cout << "Z Offset: " << section.zOffset_mm.get() << std::endl;
-					std::cout << "Width: " << section.width_mm.get() << std::endl;
+					geometryRows.push_back({ section.elementNumber, boom.elementNumber, std::to_string(subBoom.elementNumber), section });
 				}
 			}
 			for (const auto &section : boom.sections)
 			{
 				numberOfSections++;
 				sectionElementNumbers.push_back(section.elementNumber);
-				std::cout << "Section: id=" << static_cast<int>(section.elementNumber) << std::endl;
-				std::cout << "X Offset: " << section.xOffset_mm.get() << std::endl;
-				std::cout << "Y Offset: " << section.yOffset_mm.get() << std::endl;
-				std::cout << "Z Offset: " << section.zOffset_mm.get() << std::endl;
-				std::cout << "Width: " << section.width_mm.get() << std::endl;
+				geometryRows.push_back({ section.elementNumber, boom.elementNumber, "-", section });
+			}
+		}
+
+		// Values missing from the DDOP are shown as "-" rather than a misleading 0
+		auto mm = [](const isobus::DeviceDescriptorObjectPoolHelper::ObjectPoolValue &value) {
+			return value.exists() ? std::to_string(value.get()) : std::string("-");
+		};
+		log() << "Implement geometry: " << implement.booms.size() << " boom(s), " << static_cast<int>(numberOfSections) << " section(s)" << std::endl;
+		if (!geometryRows.empty())
+		{
+			auto printRow = [](const std::string &idx, const std::string &element, const std::string &boom, const std::string &subBoom, const std::string &x, const std::string &y, const std::string &z, const std::string &width) {
+				log() << std::right << std::setw(4) << idx << "  " << std::setw(7) << element << "  " << std::setw(4) << boom << "  " << std::setw(7) << subBoom
+				      << "  " << std::setw(7) << x << "  " << std::setw(7) << y << "  " << std::setw(7) << z << "  " << std::setw(10) << width << std::endl;
+			};
+			printRow("Idx", "Element", "Boom", "SubBoom", "X (mm)", "Y (mm)", "Z (mm)", "Width (mm)");
+			printRow("----", "-------", "----", "-------", "-------", "-------", "-------", "----------");
+			for (std::size_t i = 0; i < geometryRows.size(); i++)
+			{
+				const auto &row = geometryRows[i];
+				printRow(std::to_string(i), std::to_string(row.elementNumber), std::to_string(row.boomElement), row.subBoomElement, mm(row.section.xOffset_mm), mm(row.section.yOffset_mm), mm(row.section.zOffset_mm), mm(row.section.width_mm));
 			}
 		}
 		state.set_number_of_sections(numberOfSections);
@@ -473,6 +654,8 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 		{
 			state.set_element_number_for_section(i, sectionElementNumbers[i]);
 		}
+
+		state.configure_actual_work_state_feedback();
 
 		// Scan the DDOP to determine which section control method the device supports
 		bool hasCondensedSetpoint = false; // Modern: DDI 290+ (paired with DDI 289 for global work state)
@@ -528,7 +711,7 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 			                 << " for " << static_cast<int>(numberOfSections) << " sections." << std::endl;
 			for (std::uint8_t i = 0; i < numberOfSections; i++)
 			{
-				std::cout << "  Section " << static_cast<int>(i) << " -> element " << sectionElementNumbers[i] << std::endl;
+				log() << "  Section " << static_cast<int>(i) << " -> element " << sectionElementNumbers[i] << std::endl;
 			}
 		}
 		else
@@ -545,6 +728,7 @@ bool MyTCServer::activate_object_pool(std::shared_ptr<isobus::ControlFunction> p
 		return false;
 	}
 
+	state.get_process_data_index().build(state.get_pool());
 	clients[partnerCF] = state;
 	log("TC Server") << "Client " << partnerCF->get_NAME().get_full_name() << " registered successfully with "
 	                 << static_cast<int>(state.get_number_of_sections()) << " sections." << std::endl;
@@ -572,13 +756,18 @@ bool MyTCServer::delete_device_descriptor_object_pool(std::shared_ptr<isobus::Co
 	return true;
 }
 
-bool MyTCServer::get_is_stored_device_descriptor_object_pool_by_structure_label(std::shared_ptr<isobus::ControlFunction>, const std::vector<std::uint8_t> &, const std::vector<std::uint8_t> &)
+bool MyTCServer::get_is_stored_device_descriptor_object_pool_by_structure_label(std::shared_ptr<isobus::ControlFunction> partnerCF, const std::vector<std::uint8_t> &, const std::vector<std::uint8_t> &)
 {
+	// The label queries precede every pool upload, so anything still queued is from an aborted attempt
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	discard_queued_pool_chunks(partnerCF, "new upload session: structure label query");
 	return false;
 }
 
-bool MyTCServer::get_is_stored_device_descriptor_object_pool_by_localization_label(std::shared_ptr<isobus::ControlFunction>, const std::array<std::uint8_t, 7> &)
+bool MyTCServer::get_is_stored_device_descriptor_object_pool_by_localization_label(std::shared_ptr<isobus::ControlFunction> partnerCF, const std::array<std::uint8_t, 7> &)
 {
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	discard_queued_pool_chunks(partnerCF, "new upload session: localization label query");
 	return false;
 }
 
@@ -595,24 +784,30 @@ void MyTCServer::identify_task_controller(std::uint8_t tcNumber)
 	//
 	// Since this is a console application without GUI, we log to console
 	// In a GUI application, this would display the TC number visually
-	auto timestamp = get_timestamp();
-	std::cout << "[" << timestamp << "] ========================================" << std::endl;
-	std::cout << "[" << timestamp << "] === TC NUMBER " << static_cast<int>(tcNumber) << " IDENTIFIED ===" << std::endl;
-	std::cout << "[" << timestamp << "] ========================================" << std::endl;
+	log() << "========================================" << std::endl;
+	log() << "=== TC NUMBER " << static_cast<int>(tcNumber) << " IDENTIFIED ===" << std::endl;
+	log() << "========================================" << std::endl;
 }
 
 void MyTCServer::on_client_timeout(std::shared_ptr<isobus::ControlFunction> partner)
 {
 	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
 	// Cleanup the client state
-	std::cout << "[" << get_timestamp() << "] [TC Server] Client " << partner->get_NAME().get_full_name() << " has timed out!" << std::endl;
+	log("TC Server") << "Client " << partner->get_NAME().get_full_name() << " has timed out!" << std::endl;
 	clients.erase(partner);
+	// A pool the client already uploaded before timing out is stale — if it's left in
+	// place, a fresh upload on reconnect lands on top of it in the queue below, and
+	// activate_object_pool() would deserialize both instead of just the new one.
+	uploadedPools.erase(partner);
 }
 
 void MyTCServer::on_client_version_received(std::shared_ptr<isobus::ControlFunction> clientControlFunction, std::uint8_t version)
 {
-	std::cout << "[" << get_timestamp() << "] [TC Server] Client " << clientControlFunction->get_NAME().get_full_name()
-	          << " reported TC version " << static_cast<int>(version) << std::endl;
+	log("TC Server") << "Client " << clientControlFunction->get_NAME().get_full_name()
+	                 << " reported TC version " << static_cast<int>(version) << std::endl;
+	// The version exchange opens every client session, before any pool upload
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	discard_queued_pool_chunks(clientControlFunction, "new upload session: version exchange");
 }
 
 void MyTCServer::on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunction> partner,
@@ -622,7 +817,15 @@ void MyTCServer::on_process_data_acknowledge(std::shared_ptr<isobus::ControlFunc
                                              ProcessDataCommands processDataCommand)
 {
 	// This callback lets you know when a client sends a process data acknowledge (PDACK) message to you
-	std::cout << "[" << get_timestamp() << "] Received process data acknowledge from client " << int(partner->get_address()) << " for DDI " << dataDescriptionIndex << " element " << elementNumber << " with error codes " << std::bitset<8>(errorCodesFromClient) << " and command " << static_cast<int>(processDataCommand) << std::endl;
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	log() << "Received process data acknowledge from client " << int(partner->get_address()) << " for DDI " << dataDescriptionIndex << " element " << elementNumber << " with error codes " << std::bitset<8>(errorCodesFromClient) << " and command " << static_cast<int>(processDataCommand) << std::endl;
+	auto client = clients.find(partner);
+	if (errorCodesFromClient != 0 && client != clients.end())
+	{
+		bool queued = client->second.get_measurement_subscriptions().rejected(dataDescriptionIndex, elementNumber);
+		log("Measurements") << "Negative PDACK for DDI " << dataDescriptionIndex
+		                    << " element " << elementNumber << (queued ? ": bounded retry queued" : ": no eligible subscription retry") << std::endl;
+	}
 }
 
 bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partner,
@@ -632,6 +835,18 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
                                   std::uint8_t &errorCodes)
 {
 	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+
+	// Keep the latest value per object for hydrated DDOP snapshots
+	auto clientIt = clients.find(partner);
+	std::uint16_t objectID;
+	if ((clientIt != clients.end()) && clientIt->second.get_process_data_index().try_get_object_id(dataDescriptionIndex, elementNumber, objectID))
+	{
+		clientIt->second.get_shadow_values().record(objectID, processDataValue);
+	}
+
+	auto client = clients.find(partner);
+	if (client != clients.end())
+		client->second.get_measurement_subscriptions().received(dataDescriptionIndex, elementNumber);
 	switch (dataDescriptionIndex)
 	{
 		case static_cast<std::uint16_t>(isobus::DataDescriptionIndex::ActualCondensedWorkState1_16):
@@ -687,6 +902,51 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
 				}
 			}
 		}
+		break;
+
+		case static_cast<std::uint16_t>(isobus::DataDescriptionIndex::SupportedTrackControlLevels):
+		{
+			// DDI 505 is a BITMASK: bit 0 = Level 1, bit 1 = Level 2, bit 2 = Level 3, so a value
+			// of 3 means Level 1 and 2 are supported (not "Level 3"). DDI 506, which the TC writes
+			// in answer, is an ENUM instead: 0 = no common level, 1 = Level 1, 2 = Level 2, 3 = Level 3.
+			log("TC") << "Implement reports supported track control levels=" << processDataValue
+			          << " (L1=" << ((processDataValue & static_cast<int>(TrackControlLevel::Level1)) ? "yes" : "no")
+			          << " L2=" << ((processDataValue & static_cast<int>(TrackControlLevel::Level2)) ? "yes" : "no")
+			          << " L3=" << ((processDataValue & static_cast<int>(TrackControlLevel::Level3)) ? "yes" : "no") << ")" << std::endl;
+			auto &state = clients[partner];
+			state.set_supported_track_control_levels(processDataValue);
+
+			// Only Level 1 is implemented, so ask for it whenever the implement supports it, even if it
+			// also advertises Level 2 or 3.
+			if (!state.is_track_control_level_sent() &&
+			    state.has_element_number_for_ddi(isobus::DataDescriptionIndex::SetpointTrackControlLevel))
+			{
+				const std::int32_t requestedLevel = (processDataValue & static_cast<int>(TrackControlLevel::Level1)) ? 1 : 0;
+				send_set_value(partner,
+				               static_cast<std::uint16_t>(isobus::DataDescriptionIndex::SetpointTrackControlLevel),
+				               state.get_element_number_for_ddi(isobus::DataDescriptionIndex::SetpointTrackControlLevel),
+				               requestedLevel);
+				state.set_track_control_level_sent(true);
+				log("TC") << "Wrote track control level " << requestedLevel << std::endl;
+			}
+		}
+		break;
+
+		case static_cast<std::uint16_t>(isobus::DataDescriptionIndex::SetpointTrackControlLevel):
+		{
+			// The implement's echo of the level we wrote completes the negotiation.
+			const bool agreed = (processDataValue == 1);
+			log("TC") << "Implement confirmed track control level " << processDataValue
+			          << (agreed ? " — negotiation complete" : " — no common level") << std::endl;
+			clients[partner].set_track_negotiation_complete(agreed);
+		}
+		break;
+
+		case static_cast<std::uint16_t>(isobus::DataDescriptionIndex::TrackControlState):
+		{
+			log("TC") << "Implement reports track control state=" << processDataValue << std::endl;
+		}
+		break;
 	}
 
 	return true;
@@ -695,19 +955,165 @@ bool MyTCServer::on_value_command(std::shared_ptr<isobus::ControlFunction> partn
 bool MyTCServer::store_device_descriptor_object_pool(std::shared_ptr<isobus::ControlFunction> partnerCF, const std::vector<std::uint8_t> &binaryPool, bool appendToPool)
 {
 	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
-	std::cout << "[" << get_timestamp() << "] [TC Server] Client " << partnerCF->get_NAME().get_full_name() << " requesting object pool transfer of " << binaryPool.size() << " bytes" << std::endl;
-	if (uploadedPools.find(partnerCF) == uploadedPools.end())
-	{
-		uploadedPools[partnerCF] = std::queue<std::vector<std::uint8_t>>();
-	}
+	log("TC Server") << "Client " << partnerCF->get_NAME().get_full_name() << " requesting object pool transfer of " << binaryPool.size() << " bytes (append=" << appendToPool << ")" << std::endl;
+	// Always append, and ignore appendToPool: the isobus library derives it from
+	// numberOfObjectPoolSegments, which it never increments, so it is false for every
+	// segment — including the 2nd..Nth chunk of one pool. A client may send its DDOP as
+	// several Request/Transfer pairs, and dropping the queue on !appendToPool loses all
+	// but the last one. Stale chunks from an aborted upload are dropped at the start of a
+	// client session instead, see discard_queued_pool_chunks().
 	uploadedPools[partnerCF].push(binaryPool);
 	return true;
+}
+
+void MyTCServer::discard_queued_pool_chunks(std::shared_ptr<isobus::ControlFunction> partnerCF, const char *reason)
+{
+	// Caller holds clientsMutex
+	auto existing = uploadedPools.find(partnerCF);
+	if (existing != uploadedPools.end())
+	{
+		if (!existing->second.empty())
+		{
+			log("TC Server") << "Client " << partnerCF->get_NAME().get_full_name()
+			                 << " discarding " << existing->second.size() << " queued, unactivated DDOP chunk(s) (" << reason << ")" << std::endl;
+		}
+		uploadedPools.erase(existing);
+	}
 }
 
 std::map<std::shared_ptr<isobus::ControlFunction>, ClientState> MyTCServer::get_clients()
 {
 	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
 	return clients; // copy, taken while locked — see the declaration's comment
+}
+
+MyTCServer::HydrationStartResult MyTCServer::begin_hydration_snapshot(std::shared_ptr<isobus::ControlFunction> client)
+{
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	if (pendingHydration)
+	{
+		return HydrationStartResult::AlreadyRunning;
+	}
+
+	auto clientIt = clients.find(client);
+	if ((clientIt == clients.end()) || clientIt->second.get_canonical_pool_chunks().empty())
+	{
+		return HydrationStartResult::UnknownClient;
+	}
+
+	auto &state = clientIt->second;
+	PendingHydration pending;
+	pending.client = client;
+	pending.startedAt_ms = isobus::SystemTiming::get_timestamp_ms();
+	std::size_t requestCount = 0;
+
+	for (std::uint16_t i = 0; i < state.get_pool().size(); i++)
+	{
+		auto object = state.get_pool().get_object_by_index(i);
+		if (!object || !ddop_hydration::is_hydratable(*object))
+		{
+			continue;
+		}
+
+		ddop_hydration::SnapshotEntry entry;
+		entry.objectID = object->get_object_id();
+		state.get_process_data_index().try_get_element_number(entry.objectID, entry.elementNumber);
+
+		if (object->get_object_type() == isobus::task_controller_object::ObjectTypes::DeviceProperty)
+		{
+			auto property = std::static_pointer_cast<isobus::task_controller_object::DevicePropertyObject>(object);
+			entry.ddi = property->get_ddi();
+			entry.value = property->get_value();
+			entry.source = ddop_hydration::ValueSource::Pool;
+		}
+		else
+		{
+			entry.ddi = std::static_pointer_cast<isobus::task_controller_object::DeviceProcessDataObject>(object)->get_ddi();
+
+			ddop_hydration::ShadowValue shadowValue;
+			if (state.get_shadow_values().try_get(entry.objectID, shadowValue))
+			{
+				entry.value = shadowValue.value;
+				entry.source = ddop_hydration::ValueSource::Live;
+			}
+			else if (entry.elementNumber != ddop_hydration::SnapshotEntry::NO_ELEMENT)
+			{
+				// The response arrives through on_value_command, which records it in the shadow store.
+				send_request_value(client, entry.ddi, entry.elementNumber);
+				entry.source = ddop_hydration::ValueSource::Requested;
+				requestCount++;
+			}
+			else
+			{
+				entry.source = ddop_hydration::ValueSource::NotRequestable;
+			}
+		}
+		pending.entries.push_back(entry);
+	}
+
+	pending.wait_ms = (requestCount > 0) ? ddop_hydration::REQUEST_WAIT_MS : 0;
+	log("TC Server") << "Hydration snapshot for client " << client->get_NAME().get_full_name() << ": " << pending.entries.size()
+	                 << " hydratable objects, " << requestCount << " value requests sent" << std::endl;
+	pendingHydration = std::move(pending);
+	return HydrationStartResult::Started;
+}
+
+bool MyTCServer::poll_hydration_snapshot(ddop_hydration::SnapshotResult &result)
+{
+	ddop_hydration::SnapshotInput input;
+	{
+		std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+		if (!pendingHydration || !isobus::SystemTiming::time_expired_ms(pendingHydration->startedAt_ms, pendingHydration->wait_ms))
+		{
+			return false;
+		}
+
+		auto clientIt = clients.find(pendingHydration->client);
+		if (clientIt == clients.end())
+		{
+			pendingHydration.reset();
+			result = ddop_hydration::SnapshotResult();
+			result.error = "implement disconnected";
+			return true;
+		}
+
+		auto &state = clientIt->second;
+		for (auto &entry : pendingHydration->entries)
+		{
+			ddop_hydration::ShadowValue shadowValue;
+			if (entry.source != ddop_hydration::ValueSource::Requested)
+			{
+				continue;
+			}
+			if (state.get_shadow_values().try_get(entry.objectID, shadowValue))
+			{
+				entry.value = shadowValue.value;
+			}
+			else
+			{
+				entry.source = ddop_hydration::ValueSource::NoResponse;
+			}
+		}
+
+		input.canonicalPoolChunks = state.get_canonical_pool_chunks();
+		input.taskControllerCompatibilityLevel = state.get_pool().get_task_controller_compatibility_level();
+		input.clientName = pendingHydration->client->get_NAME().get_full_name();
+		input.fileStem = state.get_canonical_file_stem();
+		input.entries = std::move(pendingHydration->entries);
+		pendingHydration.reset();
+	}
+
+	// Deserializing and file I/O happen outside the lock so CAN callbacks are not held up.
+	try
+	{
+		result = ddop_hydration::write_snapshot(input);
+	}
+	catch (const std::exception &e)
+	{
+		result = ddop_hydration::SnapshotResult();
+		result.error = e.what();
+	}
+	return true;
 }
 
 void MyTCServer::request_measurement_commands()
@@ -718,6 +1124,8 @@ void MyTCServer::request_measurement_commands()
 		// Skip clients with 0 sections (e.g. tractors) - sending measurement commands to a tractor ECU can cause unexpected behavior
 		if (!client.second.are_measurement_commands_sent() && client.second.get_number_of_sections() > 0)
 		{
+			auto &subscriptions = client.second.get_measurement_subscriptions();
+			subscriptions.initialize(isobus::SystemTiming::get_timestamp_ms());
 			// Find all actual (condensed) work state DDIs and request them to trigger "On Change" and "Time Interval"
 			for (std::uint32_t i = 0; i < client.second.get_pool().size(); i++)
 			{
@@ -745,18 +1153,18 @@ void MyTCServer::request_measurement_commands()
 										// TODO: This is a bit of a hack, but it works for now
 										client.second.set_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(processDataObject->get_ddi()), elementObject->get_element_number());
 										const auto &entryB = isobus::DataDictionary::get_entry(processDataObject->get_ddi());
-										std::cout << "Mapped DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") to element "
-										          << elementObject->get_element_number() << std::endl;
+										log() << "Mapped DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") to element "
+										      << elementObject->get_element_number() << std::endl;
 
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
 										{
-											send_change_threshold_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1);
-											std::cout << "Subscribed (OnChange) to DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
-											          << elementObject->get_element_number() << std::endl;
+											subscriptions.add(processDataObject->get_ddi(), elementObject->get_element_number(), MeasurementSubscriptionQueue::Trigger::OnChange);
+											log() << "Queued (OnChange) for DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
+											      << elementObject->get_element_number() << std::endl;
 										}
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::TimeInterval))
 										{
-											send_time_interval_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1000);
+											subscriptions.add(processDataObject->get_ddi(), elementObject->get_element_number(), MeasurementSubscriptionQueue::Trigger::TimeInterval);
 										}
 									}
 								}
@@ -795,14 +1203,14 @@ void MyTCServer::request_measurement_commands()
 
 										if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
 										{
-											send_change_threshold_measurement_command(client.first, processDataObject->get_ddi(), elementObject->get_element_number(), 1);
-											std::cout << "Subscribed (OnChange) to DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
-											          << elementObject->get_element_number() << std::endl;
+											subscriptions.add(processDataObject->get_ddi(), elementObject->get_element_number(), MeasurementSubscriptionQueue::Trigger::OnChange);
+											log() << "Queued (OnChange) for DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") for element "
+											      << elementObject->get_element_number() << std::endl;
 										}
 										else
 										{
-											std::cout << "Mapped (no OnChange) DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") to element "
-											          << elementObject->get_element_number() << std::endl;
+											log() << "Mapped (no OnChange) DDI " << processDataObject->get_ddi() << " (" << entryB.to_string() << ") to element "
+											      << elementObject->get_element_number() << std::endl;
 										}
 									}
 								}
@@ -812,8 +1220,84 @@ void MyTCServer::request_measurement_commands()
 				}
 			}
 
-			std::cout << "[" << get_timestamp() << "] Measurement commands sent." << std::endl;
+			// Map the guidance DDIs so the send_* methods know which element to address.
+			// Mapping only: these are values the TC pushes to the implement, not ones to subscribe to.
+			for (std::uint32_t i = 0; i < client.second.get_pool().size(); i++)
+			{
+				auto object = client.second.get_pool().get_object_by_index(i);
+				if (!object || object->get_object_type() != isobus::task_controller_object::ObjectTypes::DeviceProcessData)
+				{
+					continue;
+				}
+
+				auto processDataObject = std::dynamic_pointer_cast<isobus::task_controller_object::DeviceProcessDataObject>(object);
+				if (!processDataObject || !is_guidance_data_ddi(processDataObject->get_ddi()))
+				{
+					continue;
+				}
+
+				if (!processDataObject->has_property(isobus::task_controller_object::DeviceProcessDataObject::PropertiesBit::Settable))
+				{
+					log() << "DDI " << processDataObject->get_ddi() << " (" << isobus::DataDictionary::get_entry(processDataObject->get_ddi()).to_string() << ") is declared but not settable, so it is not sent" << std::endl;
+					continue;
+				}
+
+				std::uint16_t elementNumber = 0;
+				if (find_owning_element_number(client.second.get_pool(), *processDataObject, elementNumber))
+				{
+					client.second.set_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(processDataObject->get_ddi()), elementNumber);
+					log() << "Mapped DDI " << processDataObject->get_ddi() << " (" << isobus::DataDictionary::get_entry(processDataObject->get_ddi()).to_string() << ") to element "
+					          << elementNumber << std::endl;
+				}
+			}
+
+			// Map the track control DDIs. Unlike the guidance data above, the implement reports these
+			// (supported levels, the echo of the level we write, its control state), so subscribe to them.
+			for (std::uint32_t i = 0; i < client.second.get_pool().size(); i++)
+			{
+				auto object = client.second.get_pool().get_object_by_index(i);
+				if (!object || object->get_object_type() != isobus::task_controller_object::ObjectTypes::DeviceProcessData)
+				{
+					continue;
+				}
+
+				auto processDataObject = std::dynamic_pointer_cast<isobus::task_controller_object::DeviceProcessDataObject>(object);
+				if (!processDataObject || !is_track_control_ddi(processDataObject->get_ddi()))
+				{
+					continue;
+				}
+
+				std::uint16_t elementNumber = 0;
+				if (!find_owning_element_number(client.second.get_pool(), *processDataObject, elementNumber))
+				{
+					continue;
+				}
+
+				const auto ddi = processDataObject->get_ddi();
+				const auto &entry = isobus::DataDictionary::get_entry(ddi);
+				client.second.set_element_number_for_ddi(static_cast<isobus::DataDescriptionIndex>(ddi), elementNumber);
+				if (processDataObject->has_trigger_method(isobus::task_controller_object::DeviceProcessDataObject::AvailableTriggerMethods::OnChange))
+				{
+					subscriptions.add(ddi, elementNumber, MeasurementSubscriptionQueue::Trigger::OnChange);
+					log() << "Queued (OnChange) for DDI " << ddi << " (" << entry.to_string() << ") for element " << elementNumber << std::endl;
+				}
+				else
+				{
+					log() << "Mapped (no OnChange) DDI " << ddi << " (" << entry.to_string() << ") to element " << elementNumber << std::endl;
+				}
+			}
+
+			log() << "Measurement subscriptions queued (1s initial delay, 100ms spacing)." << std::endl;
 			client.second.mark_measurement_commands_sent();
+		}
+		auto &subscriptions = client.second.get_measurement_subscriptions();
+		if (auto command = subscriptions.next(isobus::SystemTiming::get_timestamp_ms()))
+		{
+			bool sent = command->trigger == MeasurementSubscriptionQueue::Trigger::OnChange ? send_change_threshold_measurement_command(client.first, command->ddi, command->element, 1) : send_time_interval_measurement_command(client.first, command->ddi, command->element, 1000);
+			if (!sent)
+				subscriptions.send_failed(*command);
+			log("Measurements") << "DDI " << command->ddi << " element " << command->element
+			                    << " attempt " << command->attempts << (sent ? " sent" : " send failed") << std::endl;
 		}
 	}
 }
@@ -884,6 +1368,71 @@ void MyTCServer::update_section_control_enabled(bool enabled)
 	}
 }
 
+void MyTCServer::send_gnss_quality(std::uint8_t quality)
+{
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	constexpr auto DDI = isobus::DataDescriptionIndex::GNSSQuality;
+	for (auto &client : clients)
+	{
+		if (client.second.has_element_number_for_ddi(DDI))
+		{
+			send_set_value(client.first, static_cast<std::uint16_t>(DDI), client.second.get_element_number_for_ddi(DDI), static_cast<std::int32_t>(quality));
+		}
+	}
+}
+
+void MyTCServer::send_guidance_track_data(const GuidanceTrackContext &ctx, std::int32_t lineDeviationMm)
+{
+	if (!ctx.valid)
+	{
+		return;
+	}
+
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	for (auto &client : clients)
+	{
+		auto &state = client.second;
+
+		auto trySend = [&](isobus::DataDescriptionIndex ddi, std::int32_t value) {
+			if (state.has_element_number_for_ddi(ddi))
+			{
+				send_set_value(client.first, static_cast<std::uint16_t>(ddi), state.get_element_number_for_ddi(ddi), value);
+			}
+		};
+
+		const std::uint32_t sequenceNumber = state.update_guidance_track_sequence(ctx.actualTrackNumber, ctx.guidanceReferenceLineId);
+
+		// Coherent ordering per the TRACK guideline:
+		// 507 (sequence) -> 508 (ref line ID) -> 509 (actual track) -> 510 (right) -> 511 (left)
+		trySend(isobus::DataDescriptionIndex::GuidanceTrackSequenceNumber, static_cast<std::int32_t>(sequenceNumber));
+		trySend(isobus::DataDescriptionIndex::UniqueGuidanceReferenceLineID, static_cast<std::int32_t>(ctx.guidanceReferenceLineId));
+		trySend(isobus::DataDescriptionIndex::ActualGuidanceTrackNumber, ctx.actualTrackNumber);
+		trySend(isobus::DataDescriptionIndex::GuidanceTrackNumberToTheRight, ctx.trackNumberRight);
+		trySend(isobus::DataDescriptionIndex::GuidanceTrackNumberToTheLeft, ctx.trackNumberLeft);
+		if (ctx.swathWidthMm != 0)
+		{
+			trySend(isobus::DataDescriptionIndex::GuidanceLineSwathWidth, static_cast<std::int32_t>(ctx.swathWidthMm));
+		}
+		trySend(isobus::DataDescriptionIndex::GuidanceLineDeviation, lineDeviationMm);
+	}
+}
+
+void MyTCServer::update_track_control_enabled(bool enabled)
+{
+	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
+	constexpr auto DDI = isobus::DataDescriptionIndex::TrackControlState;
+	for (auto &client : clients)
+	{
+		// Only clients that agreed on a track control level get commanded.
+		if (client.second.is_track_negotiation_complete() && client.second.has_element_number_for_ddi(DDI))
+		{
+			// DDI 515 values: 0 = manual/off, 1 = automatic/on
+			send_set_value(client.first, static_cast<std::uint16_t>(DDI), client.second.get_element_number_for_ddi(DDI), enabled ? 1 : 0);
+			log("TC") << "Track control state=" << (enabled ? "On" : "Off") << std::endl;
+		}
+	}
+}
+
 void MyTCServer::send_section_setpoint_states(std::shared_ptr<isobus::ControlFunction> client, std::uint8_t ddiOffset)
 {
 	std::lock_guard<std::recursive_mutex> lock(clientsMutex);
@@ -911,7 +1460,7 @@ void MyTCServer::send_section_setpoint_states(std::shared_ptr<isobus::ControlFun
 		}
 		else if (!clients[client].has_element_number_for_ddi(isobus::DataDescriptionIndex::SetpointWorkState))
 		{
-			std::cout << "[" << get_timestamp() << "] [TC Server] DDI 289 (SetpointWorkState) not available!" << std::endl;
+			log("TC Server") << "DDI 289 (SetpointWorkState) not available!" << std::endl;
 		}
 		return; // Modern condensed path complete
 	}
@@ -923,7 +1472,7 @@ void MyTCServer::send_section_setpoint_states(std::shared_ptr<isobus::ControlFun
 		}
 		else
 		{
-			std::cout << "[" << get_timestamp() << "] [TC Server] Legacy DDI " << ddiTargetLegacy << " (ActualCondensedWorkState) is not settable!" << std::endl;
+			log("TC Server") << "Legacy DDI " << ddiTargetLegacy << " (ActualCondensedWorkState) is not settable!" << std::endl;
 		}
 		return; // Legacy condensed path complete
 	}
@@ -963,8 +1512,8 @@ void MyTCServer::send_section_setpoint_states(std::shared_ptr<isobus::ControlFun
 	}
 	else
 	{
-		std::cout << "[" << get_timestamp() << "] [TC Server] No supported method to send section setpoint states! "
-		          << "Device has no DDI 290, 161 (settable), or 141 (settable)." << std::endl;
+		log("TC Server") << "No supported method to send section setpoint states! "
+		                 << "Device has no DDI 290, 161 (settable), or 141 (settable)." << std::endl;
 	}
 }
 

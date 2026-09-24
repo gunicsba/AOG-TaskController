@@ -78,6 +78,16 @@ AOG-TaskController reads its configuration from a `settings.json` file located i
 }
 ```
 
+### Hydrated DDOP snapshots
+
+Many implement values, such as element offsets and working width, are not stored in the DDOP; the implement reports them as process data once it is running. The **Snapshot DDOP** button on the VT Implement page writes a copy of the connected implement's DDOP with those values filled in, for viewing in tools such as AgIsoDDOPGenerator.
+
+- The objects are picked from the DDOP itself: every DeviceProperty, and every DeviceProcessData that reports on change and is not a total, a setpoint, a work state, section control state or an actual rate.
+- Values that were already reported are used directly. For the rest, the TC sends value requests and waits 10 seconds for answers.
+- DeviceProcessData objects with a value are replaced by DeviceProperty objects with the same object ID, DDI and designator. The Device designator gets a `SNAP ` prefix and the structure label is changed.
+- The snapshot is stored next to the canonical pool as `<NAME>/<label>.SNAP-<timestamp>.ddop`, with a `.json` file that lists every object, its value and where the value came from.
+- Snapshots are for debugging only: never upload one to a TC. The canonical `<label>.ddop` is not changed.
+
 ### Virtual Terminal compatibility
 
 The VT object pool is embedded in the executable and automatically scales from its authored 480-pixel data mask and 80-pixel softkey designator to the connected terminal. It uses five virtual navigation softkeys. A VT with fewer than five physical keys must support softkey paging.
@@ -90,8 +100,21 @@ The application logs the detected VT version, screen size, softkey dimensions, a
 - **Maximum Booms:** 1
 - **Maximum Sections:** 64 (supports both individual sections and zone-based control)
 - **Section Control:** Generation 1 (TC-SC) with support for DDI 160/161/290
+- **Track Control:** Level 1 — negotiates the level with the implement (DDI 505/506) and switches its track control on and off (DDI 515) together with AgOpenGPS's Auto command
+
+### Guidance data sent to implements
+
+Sent to any implement whose device description declares the DDI as settable.
+
+- **GNSS quality (DDI 514):** AgOpenGPS's GPS fix quality, every 250 ms.
+- **Guidance track (DDI 507-513):** the current track number, the tracks to its left and right, the track spacing, a reference line ID that is unique across fields, and the deviation from the guidance line, every 250 ms while AgOpenGPS has an active track.
 
 ## Contributing
+
+Please keep pull requests small and focused on one change. A PR that fixes one bug or adds one
+capability is much faster to review (and to revert, if needed) than one that bundles several
+unrelated changes together — if you find yourself fixing more than one thing, consider splitting
+the work into separate PRs instead.
 
 Before committing it's better to run these commands: (requires the LLVM project to be installed)
  ```powershell
