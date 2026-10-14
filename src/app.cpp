@@ -385,6 +385,7 @@ void Application::setup_task_controller_server()
 	// An implement still connected to a previous run of the TC (a restart takes only a few seconds) would keep
 	// talking to us without reconnecting, and get NACKed, unless it sees our TC Status stop for longer than 6 s.
 	start_tc_quiet_period("startup");
+	tcServer->set_initial_section_control_enabled(settings->is_section_control_on_connect());
 	tcServer->set_task_totals_active(true); // TODO: make this dynamic based on status in AOG
 	tcFunctionalities = std::make_unique<isobus::ControlFunctionFunctionalities>(tcCF);
 	tcFunctionalities->set_functionality_is_supported(
