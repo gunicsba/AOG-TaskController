@@ -61,8 +61,10 @@ FetchContent_MakeAvailable(Boost)
 
 FetchContent_Declare(
   isobus
-  GIT_REPOSITORY https://github.com/Open-Agriculture/AgIsoStack-plus-plus.git
-  GIT_TAG fbf52360eaf6bb37bc76e7b324d9b28081f7ed53
+  # Szello test build: upstream fbf5236 + PR #783 (DataSpan) + PR #784 (TC server
+  # null source guard). Switch back to upstream once both are merged.
+  GIT_REPOSITORY https://github.com/gunicsba/AgIsoStack-plus-plus.git
+  GIT_TAG bbd7f82cbf118bacf203475b234b383926f0d7cf
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(isobus)
 
